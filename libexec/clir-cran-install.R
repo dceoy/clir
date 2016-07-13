@@ -15,5 +15,22 @@ cran_install <- function(pkgs, repos = c(CRAN = 'https://cran.rstudio.com/'), r_
 }
 
 if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
+  sapply(c('drat', 'devtools'), require, character.only = TRUE)
+  if(file.exists(cran_txt <- '../r/cran_mirror')) {
+    mirror <- scan(cran_txt, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+    options(repos = c(CRAN = mirror))
+  }
+  if(require('drat') && file.exists(drat_txt <- '../r/drat_accounts')) {
+    accounts <- scan(drat_txt, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+    drat:::addRepo(account = accounts)
+  }
+  repos <- getOption('repos')
+  message('\nRepository ---------------------------------------------------------------------')
+  lapply(names(repos),
+         function(n) {
+           message(paste0('  ', n, ':'))
+           message(paste0('    - ', repos[n]))
+         })
+  message('--------------------------------------------------------------------------------\n')
   cran_install(argv)
 }

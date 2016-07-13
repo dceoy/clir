@@ -8,3 +8,5 @@ if [[ ${1} = '--debug' ]]; then
   shift
 fi
 
+R_LIBRARY='../r/library'
+[[ -d ${R_LIBRARY} ]] || mkdir -p ${R_LIBRARY}
