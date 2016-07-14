@@ -5,15 +5,14 @@ test_load <- function(pkgs) {
   if(suppressMessages(require('devtools'))) {
     print(devtools::session_info())
   }
-  message('\nLoading test -------------------------------------------------------------------')
+  cat('\nLoading test -------------------------------------------------------------------\n')
   if(length(v_succeeded <- names(v_status)[v_status]) > 0) {
-    message(' Suceeded:')
-    message(paste0(paste0('  ', v_succeeded), collapse = '\n'))
+    cat(' Suceeded:\n   - ', paste(v_succeeded, collapse = '\n   - '), '\n', sep = '')
   }
   if(length(v_failed <- names(v_status)[! v_status]) > 0) {
-    message(' Failed:')
-    message(paste0(paste0('  ', v_failed), collapse = '\n'))
+    cat(' Failed:\n   - ', paste(v_failed, collapse = '\n   - '), '\n', sep = '')
   }
+  cat('\n')
 }
 
 if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
