@@ -1,5 +1,12 @@
 #!/usr/bin/env Rscript
 
+help_message <-
+'Usage:  clir test-load <package>
+        clir test-load --help
+
+Options:
+  --help      Print this message'
+
 test_load <- function(pkgs) {
   v_status <- suppressMessages(sapply(as.vector(pkgs), require, character.only = TRUE))
   if(suppressMessages(require('devtools'))) {
@@ -16,5 +23,9 @@ test_load <- function(pkgs) {
 }
 
 if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
-  test_load(argv)
+  switch(argv[1],
+         '--help' = message(help_message),
+         test_load(argv))
+} else {
+  message(help_message)
 }

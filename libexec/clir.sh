@@ -10,3 +10,6 @@ fi
 
 R_LIBRARY='../r/library'
 [[ -d ${R_LIBRARY} ]] || mkdir -p ${R_LIBRARY}
+
+version='0.0.1'
+echo "clir version ${version}"
