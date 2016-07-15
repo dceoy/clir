@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  test-load <package>
+# Usage:  clir test-load <package>
 
 test_load <- function(pkgs) {
   v_status <- suppressMessages(sapply(as.vector(pkgs), require, character.only = TRUE))

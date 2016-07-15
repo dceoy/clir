@@ -1,17 +1,21 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  cran-install <package...>
-#         cran-install --quiet <package...>
+# Usage:  clir cran-install <package...>
+#         clir cran-install --quiet <package...>
 #
 # Options:
-#   --quiet           Suppress output messages
+#   --quiet             Suppress output messages
+
+clir_root <- Sys.getenv('CLIR_ROOT')
+cran_txt_path <- paste0(clir_root, '/cran_url')
+drat_txt_path <- paste0(clir_root, '/drat_account')
 
 cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com/'), r_lib = .libPaths()[1]) {
   if(require('devtools')) {
     withr::with_libpaths(r_lib,
                          devtools::update_packages(pkgs = pkgs, repos = repos, dependencies = TRUE))
   } else {
-    if(pkgs == NULL) {
+    if(is.null(pkgs)) {
       update.packages(repos = repos, checkBuilt = TRUE, ask = FALSE, lib.loc = r_lib)
     } else {
       if(length(pkgs_old <- intersect(pkgs, installed.packages(lib.loc = r_lib)[, 1])) > 0) {
@@ -24,14 +28,14 @@ cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com
   }
 }
 
-load_repos <- function(cran_file = '../cran_url', drat_file = '../drat_account', quiet = FALSE) {
+load_repos <- function(cran_txt_file = cran_txt_path, drat_txt_file = drat_txt_path, quiet = FALSE) {
   suppressMessages(sapply(c('drat', 'devtools'), require, character.only = TRUE))
-  if(file.exists(cran_file)) {
-    urls <- scan(cran_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+  if(file.exists(cran_txt_file)) {
+    urls <- scan(cran_txt_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
     options(repos = c(CRAN = urls[1]))
   }
-  if(require('drat') && file.exists(drat_file)) {
-    accounts <- scan(drat_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+  if(require('drat') && file.exists(drat_txt_file)) {
+    accounts <- scan(drat_txt_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
     drat:::addRepo(account = accounts)
   }
   repos <- getOption('repos')

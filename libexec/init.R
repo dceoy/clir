@@ -1,21 +1,21 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  init.R --default
-#         init.R --cran-url <url>
+# Usage:  clir init --default
+#         clir init --cran-url <url>
 #
 # Options:
-#   --default         Install required libraries
-#   --cran-url        Install required libraries with a selected CRAN repository
+#   --default           Install required libraries
+#   --cran-url          Install required libraries with a selected CRAN repository
 
-init <- function(url = NA) {
-  suppressMessages({
-    source('set-cran-url.R')  # set_cran_url()
-    source('cran-install.R')  # cran_install(), load_repos()
-  })
-  if(! is.na(url)) {
-    set_cran_url(url, quiet = TRUE)
-  } else if(! file.exists(cran_txt_abs_path)) {
-    set_cran_url(quiet = TRUE)
+clir_root <- Sys.getenv('CLIR_ROOT')
+suppressMessages({
+  source(paste0(clir_root, '/libexec/set-cran.R'))      # set_cran_url()
+  source(paste0(clir_root, '/libexec/cran-install.R'))  # cran_install(), load_repos()
+})
+
+init <- function(urls = NULL) {
+  if(! file.exists(cran_txt_abs_path)) {
+    set_cran_url(urls, quiet = TRUE)
   }
   load_repos()
   message('R library installation ---------------------------------------------------------')
@@ -43,7 +43,7 @@ if(length(argv <- commandArgs(trailingOnly = TRUE)) < 1) {
   }
 } else {
   if(argv[1] != '--cran-url') {
-    stop('invalid arguments'),
+    stop('invalid arguments')
   } else if(sum(grepl('^-', argv[-1])) > 0) {
     stop('unrecognized options')
   } else {

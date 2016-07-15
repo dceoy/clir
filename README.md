@@ -1,2 +1,6 @@
-# clir
-Command Line Tool for R
+Clir
+====
+
+Command Line Tool for R package installation
+
+

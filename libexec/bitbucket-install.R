@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  bitbucket-install <username/repo...>
-#         bitbucket-install --quiet <username/repo...>
+# Usage:  clir bitbucket-install <username/repo...>
+#         clir bitbucket-install --quiet <username/repo...>
 #
 # Options:
-#   --quiet           Suppress output messages
+#   --quiet             Suppress output messages
 
 bitbucket_install <- function(pkgs, r_lib = .libPaths()[1]) {
   withr::with_libpaths(r_lib, devtools::install_bitbucket(pkgs))

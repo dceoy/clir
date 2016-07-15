@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  bioc-install.R <package...>
-#         bioc-install.R --quiet <package...>
+# Usage:  clir bioc-install <package...>
+#         clir bioc-install --quiet <package...>
 #
 # Options:
-#   --quiet           Suppress output messages
+#   --quiet             Suppress output messages
 
 bioc_install <- function(pkgs, mirror = 'https://bioconductor.org', r_lib = .libPaths()[1]) {
   options(BioC_mirror = mirror)

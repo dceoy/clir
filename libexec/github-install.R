@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 #
-# Usage:  github-install <username/repo...>
-#         github-install --quiet <username/repo...>
+# Usage:  clir github-install <username/repo...>
+#         clir github-install --quiet <username/repo...>
 #
 # Options:
-#   --quiet           Suppress output messages
+#   --quiet             Suppress output messages
 
 github_install <- function(pkgs, r_lib = .libPaths()[1]) {
   withr::with_libpaths(r_lib, devtools::install_github(pkgs))
