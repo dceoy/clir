@@ -1,13 +1,10 @@
 #!/usr/bin/env Rscript
-
-help_message <-
-'Usage:  clir cran-install <package>
-        clir cran-install --quiet <package>
-        clir cran-install --help
-
-Options:
-  --quiet     Suppress output messages
-  --help      Print this message'
+#
+# Usage:  cran-install <package...>
+#         cran-install --quiet <package...>
+#
+# Options:
+#   --quiet           Suppress output messages
 
 cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com/'), r_lib = .libPaths()[1]) {
   if(require('devtools')) {
@@ -27,14 +24,14 @@ cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com
   }
 }
 
-set_repos <- function(cran_txt_file = '../cran_mirror', drat_txt_file = '../drat_accounts', quiet = TRUE) {
+load_repos <- function(cran_file = '../cran_url', drat_file = '../drat_account', quiet = FALSE) {
   suppressMessages(sapply(c('drat', 'devtools'), require, character.only = TRUE))
-  if(file.exists(cran_txt_file)) {
-    mirror <- scan(cran_txt_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
-    options(repos = c(CRAN = mirror[1]))
+  if(file.exists(cran_file)) {
+    urls <- scan(cran_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+    options(repos = c(CRAN = urls[1]))
   }
-  if(require('drat') && file.exists(drat_txt_file)) {
-    accounts <- scan(drat_txt_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
+  if(require('drat') && file.exists(drat_file)) {
+    accounts <- scan(drat_file, what = character(), sep = '\n', quiet = TRUE, blank.lines.skip = FALSE)
     drat:::addRepo(account = accounts)
   }
   repos <- getOption('repos')
@@ -47,11 +44,23 @@ set_repos <- function(cran_txt_file = '../cran_mirror', drat_txt_file = '../drat
   return(invisible(repos))
 }
 
-if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
-  switch(argv[1],
-         '--help' = message(help_message),
-         '--quiet' = suppressMessages(cran_install(argv[-1], repos = set_repos())),
-         cran_install(argv, repos = set_repos()))
+if(length(argv <- commandArgs(trailingOnly = TRUE)) < 1) {
+  message('Nothig to do.')
+} else if(length(argv) == 1) {
+  if(argv == '--quiet') {
+    stop('missing arguments')
+  } else if(grepl('^-', argv)) {
+    stop('unrecognized options')
+  } else {
+    cran_install(argv, repos = load_repos(quiet = TRUE))
+  }
 } else {
-  message(help_message)
+  pkgv <- setdiff(argv, '--quiet')
+  if(sum(grepl('^-', pkgv)) > 0) {
+    stop('unrecognized options')
+  } else if('--quiet' %in% argv) {
+    suppressMessages(cran_install(pkgv, repos = load_repos(quiet = TRUE)))
+  } else {
+    cran_install(pkgv, repos = load_repos(quiet = TRUE))
+  }
 }

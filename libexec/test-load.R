@@ -1,11 +1,6 @@
 #!/usr/bin/env Rscript
-
-help_message <-
-'Usage:  clir test-load <package>
-        clir test-load --help
-
-Options:
-  --help      Print this message'
+#
+# Usage:  test-load <package>
 
 test_load <- function(pkgs) {
   v_status <- suppressMessages(sapply(as.vector(pkgs), require, character.only = TRUE))
@@ -23,9 +18,9 @@ test_load <- function(pkgs) {
 }
 
 if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
-  switch(argv[1],
-         '--help' = message(help_message),
-         test_load(argv))
-} else {
-  message(help_message)
+  if(sum(grepl('^-', argv)) > 0) {
+    stop('unrecognized options')
+  } else {
+    test_load(argv)
+  }
 }

@@ -1,23 +1,32 @@
 #!/usr/bin/env Rscript
-
-help_message <-
-'Usage:  clir github-install <username>/<repo>
-        clir github-install --quiet <username>/<repo>
-        clir github-install --help
-
-Options:
-  --quiet   Suppress output messages
-  --help    Print this message'
+#
+# Usage:  github-install <username/repo...>
+#         github-install --quiet <username/repo...>
+#
+# Options:
+#   --quiet           Suppress output messages
 
 github_install <- function(pkgs, r_lib = .libPaths()[1]) {
   withr::with_libpaths(r_lib, devtools::install_github(pkgs))
 }
 
-if(length(argv <- commandArgs(trailingOnly = TRUE)) > 0) {
-  switch(argv[1],
-         '--help' = message(help_message),
-         '--quiet' = suppressMessages(github_install(argv[-1])),
-         github_install(argv))
+if(length(argv <- commandArgs(trailingOnly = TRUE)) < 1) {
+  message('Nothig to do.')
+} else if(length(argv) == 1) {
+  if(argv == '--quiet') {
+    stop('missing arguments')
+  } else if(grepl('^-', argv)) {
+    stop('unrecognized options')
+  } else {
+    github_install(argv)
+  }
 } else {
-  message(help_message)
+  pkgv <- setdiff(argv, '--quiet')
+  if(sum(grepl('^-', pkgv)) > 0) {
+    stop('unrecognized options')
+  } else if('--quiet' %in% argv) {
+    suppressMessages(github_install(pkgv))
+  } else {
+    github_install(pkgv)
+  }
 }
