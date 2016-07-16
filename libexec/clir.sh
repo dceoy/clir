@@ -12,7 +12,6 @@
 #   bitbucket-install   Install or update R packages via Bitbucket
 #   cran-install        Install or update R packages via CRAN
 #   github-install      Install or update R packages via GitHub
-#   init                Install or update required libraries ({devtools}, {drat})
 #   set-cran            Set URLs of CRAN mirror sites
 #   set-drat            Set Drat repositories
 #   test-load           Test loading of installed R packages
@@ -33,7 +32,7 @@ fi
 R_VERSION="$(R --version | head -1)"
 R_PATH="$(which R)"
 [[ -n "${CLIR_DEBUG}" ]] \
-  && R_CMD="${R_PATH} --verbose --vanilla --slave" \
+  && R_CMD="${R_PATH} --verbose --vanilla" \
   || R_CMD="${R_PATH} --vanilla --slave"
 
 [[ -n "${R_LIBS}" ]] || export R_LIBS="${CLIR_ROOT}/r/library"

@@ -9,10 +9,10 @@ test_load <- function(pkgs) {
   }
   cat('\nLoading test -------------------------------------------------------------------\n')
   if(length(v_succeeded <- names(v_status)[v_status]) > 0) {
-    cat(' Suceeded:\n   - ', paste(v_succeeded, collapse = '\n   - '), '\n', sep = '')
+    cat(' Suceeded:\n   ', paste(v_succeeded, collapse = '\n   '), '\n', sep = '')
   }
   if(length(v_failed <- names(v_status)[! v_status]) > 0) {
-    cat(' Failed:\n   - ', paste(v_failed, collapse = '\n   - '), '\n', sep = '')
+    cat(' Failed:\n   ', paste(v_failed, collapse = '\n   '), '\n', sep = '')
   }
   cat('\n')
 }
