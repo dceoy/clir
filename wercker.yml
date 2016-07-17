@@ -13,8 +13,21 @@ build:
         code: |
           curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
     - script:
+        name: set environment variables
+        code: |
+          chsh -s /bin/bash root
+          echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
+          echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bash_profile
+          source ~/.bash_profile
+    - script:
         name: test clir
         code: |
-          export PATH=${HOME}/.clir/bin:${PATH}
-          export R_LIBS=${HOME}/.clir/r/library
           clir test-load devtools drat
+push:
+  steps:
+    - internal/docker-push:
+        username: dceoy
+        password: $DOCKER_PASS
+        tag: latest
+        repository: dceoy/clir
+        registry: https://registry.hub.docker.com
