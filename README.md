@@ -8,38 +8,38 @@ Command line interface for R package installation
 Installation
 ------------
 
-##### 1.  Install R and additional packages
+1.  Install R and additional packages.
 
-```sh
-# Ubuntu
-$ sudo apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
+    ```sh
+    # Ubuntu
+    $ sudo apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
 
-# CentOS
-$ sudo yum -y install R-devel libcurl-devel openssl-devel git
+    # CentOS
+    $ sudo yum -y install R-devel libcurl-devel openssl-devel git
 
-# Fedora
-$ sudo dnf -y install R-devel libcurl-devel openssl-devel git
-```
+    # Fedora
+    $ sudo dnf -y install R-devel libcurl-devel openssl-devel git
+    ```
 
-##### 2.  Check out clir into `~/.clir` and run `install.sh`.
+2.  Check out clir into `~/.clir` and run `install.sh`.
 
-```sh
-$ git clone https://github.com/dceoy/clir.git ~/.clir
-$ .clir/install.sh
-```
+    ```sh
+    $ git clone https://github.com/dceoy/clir.git ~/.clir
+    $ .clir/install.sh
+    ```
 
-`install.sh` installs [devtools](https://github.com/hadley/devtools) and [drat](https://github.com/eddelbuettel/drat).
- Some of clir commands require them.
+    `install.sh` installs [devtools](https://github.com/hadley/devtools) and [drat](https://github.com/eddelbuettel/drat).
+    Some of clir commands require them.
 
-##### 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}`.
+3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}`.
 
-```sh
-$ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bashrc
-$ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bashrc
-$ exec ${SHELL} -l
-```
+    ```sh
+    $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bashrc
+    $ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bashrc
+    $ exec ${SHELL} -l
+    ```
 
-Note: If you use Zsh, modify `~/.zshrc` instead of `~/.bashrc`.
+    Note: If you use Zsh, modify `~/.zshrc` instead of `~/.bashrc`.
 
 Usage
 -----
@@ -59,7 +59,7 @@ clir [ -h | --help | -v | --version ]
 | set-drat          | Set Drat repositories                         | -                |
 | test-load         | Test loading of installed R packages          | (devtools)       |
 
-* Depending packages in () are not required, but they are used if installed.
+\* Depending packages in () are not required, but they are used if installed.
 
 Run `clir COMMAND --help` for more information on a command.
 
