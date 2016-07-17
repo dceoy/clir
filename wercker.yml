@@ -1,0 +1,20 @@
+box:
+  id: ubuntu
+  entrypoint: /bin/bash -c
+build:
+  steps:
+    - script:
+        name: prepare required packages
+        code: |
+          apt-get -y update
+          apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
+    - script:
+        name: install clir
+        code: |
+          curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
+    - script:
+        name: test clir
+        code: |
+          export PATH=${HOME}/.clir/bin:${PATH}
+          export R_LIBS=${HOME}/.clir/r/library
+          clir test-load devtools drat

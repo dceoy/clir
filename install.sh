@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+[[ ! "${1}" = '-d' ]] && [[ ! "${1}" = '--debug' ]] || set -x
 
 echo '
 This script install CLI-based R package installer `clir`.
@@ -37,6 +38,8 @@ export R_LIBS="${CLIR_ROOT}/r/library"
 echo 'Installing {devtools} and {drat} -----------------------------------------------
 '
 "${CLIR}" cran-install --quiet devtools drat
+Rscript -e 'devtools::has_devel()'
+echo
 "${CLIR}" test-load devtools drat
 
 
@@ -47,9 +50,11 @@ Done.
 To access the utility, set environment variables as follows:
 
   # Add clir/bin to ${PATH}
-  $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
+  $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bashrc
 
   # Add clir/r/library to ${R_LIBS}
-  $ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bash_profile
+  $ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bashrc
+
+If you use Zsh, modify `~/.zshrc` instead of `~/.bashrc`.
 
 For more information, see https://github.com/dceoy/clir'
