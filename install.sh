@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-[[ ! "${1}" = '-d' ]] && [[ ! "${1}" = '--debug' ]] || set -x
+[[ "${1}" = '--debug' ]] && set -x
 
 echo '
 This script install CLI-based R package installer `clir`.

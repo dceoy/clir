@@ -29,7 +29,7 @@ if [[ "${1}" = '-d' ]] || [[ "${1}" = '--debug' ]]; then
   shift 1
 fi
 
-R_VERSION="$(R --version | head -1)"
+R_VERSION_INFO="$(R --version | head -1)"
 R_PATH="$(which R)"
 [[ -n "${CLIR_DEBUG}" ]] \
   && R_CMD="${R_PATH} --verbose --vanilla" \
@@ -40,7 +40,7 @@ R_PATH="$(which R)"
 
 function print_version {
   echo "clir version ${CLIR_VERSION}"
-  echo "${R_VERSION} (${R_PATH})"
+  echo "${R_VERSION_INFO} (${R_PATH})"
 }
 
 function print_usage {
@@ -67,6 +67,7 @@ function abort {
 }
 
 function print_cmd_path {
+  [[ "${1}" =~ '^-' ]] && abort "no such option '${1}'"
   cmd_abs_path="${CLIR_ROOT}/libexec/${1}.R"
   [[ -f "${cmd_abs_path}" ]] || abort "no such command '${1}'"
   echo ${cmd_abs_path}
