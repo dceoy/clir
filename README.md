@@ -34,8 +34,8 @@ Installation
 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}`.
 
     ```sh
-    $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
-    $ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bash_profile
+    $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
+    $ echo 'export R_LIBS="${HOME}/.clir/r/library"' >> ~/.bash_profile
     $ source ~/.bash_profile
     ```
 
@@ -69,6 +69,6 @@ Example
 -------
 
 ```sh
-$ clir cran-install dplyr tidyr ggplot2   # Install or update R packages via CRAN
-$ clir test-load dplyr tidyr ggplot2      # Test loading of installed R packages
+$ clir install dplyr tidyr ggplot2    # Install or update R packages via CRAN
+$ clir test-load dplyr tidyr ggplot2  # Test loading of installed R packages
 ```
