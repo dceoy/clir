@@ -8,7 +8,7 @@ Command line interface for R package installation
 Installation
 ------------
 
-1.  Install R and additional packages.
+1.  Install R and the additional packages.
 
     ```sh
     # Ubuntu
@@ -49,15 +49,16 @@ clir COMMAND [arg...]
 clir [ -h | --help | -v | --version ]
 ```
 
-| command           | description                                   | depends          |
-|:------------------|:----------------------------------------------|:-----------------|
-| bioc-install      | Install or update R packages via Bioconductor | -                |
-| bitbucket-install | Install or update R packages via Bitbucket    | devtools         |
-| cran-install      | Install or update R packages via CRAN         | (devtools, drat) |
-| github-install    | Install or update R packages via GitHub       | devtools         |
-| set-cran          | Set URLs of CRAN mirror sites                 | -                |
-| set-drat          | Set Drat repositories                         | -                |
-| test-load         | Test loading of installed R packages          | (devtools)       |
+| command           | description                                                        | depends          |
+|:------------------|:-------------------------------------------------------------------|:-----------------|
+| bioc-install      | Install or update R packages via Bioconductor                      | -                |
+| bitbucket-install | Install or update R packages via Bitbucket                         | devtools         |
+| cran-install      | Install or update R packages via CRAN                              | (devtools, drat) |
+| github-install    | Install or update R packages via GitHub                            | devtools         |
+| install           | Install or update R packages via CRAN (shortcut of `cran-install`) | (devtools, drat) |
+| set-cran          | Set URLs of CRAN mirror sites                                      | -                |
+| set-drat          | Set Drat repositories                                              | -                |
+| test-load         | Test loading of installed R packages                               | (devtools)       |
 
 \* Packages in () are not required, but they are used if installed.
 

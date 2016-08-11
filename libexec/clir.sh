@@ -12,6 +12,7 @@
 #   bitbucket-install   Install or update R packages via Bitbucket
 #   cran-install        Install or update R packages via CRAN
 #   github-install      Install or update R packages via GitHub
+#   install             Install or update R packages via CRAN (shortcut of `cran-install`)
 #   set-cran            Set URLs of CRAN mirror sites
 #   set-drat            Set Drat repositories
 #   test-load           Test loading of installed R packages
@@ -36,7 +37,7 @@ R_PATH="$(which R)"
   || R_CMD="${R_PATH} --vanilla --slave"
 
 [[ -n "${R_LIBS}" ]] || export R_LIBS="${CLIR_ROOT}/r/library"
-[[ -d "${R_LIBS}" ]] || mkdir -p "${R_LIBS}"
+[[ -d "${R_LIBS}" ]] || mkdir -p ${R_LIBS}
 
 function print_version {
   echo "clir version ${CLIR_VERSION}"
@@ -52,7 +53,7 @@ function print_usage {
     /^#/!q
     s/^#$/# /
     s/^# //p
-  ' "${cmd_abs_path}"
+  ' ${cmd_abs_path}
 }
 
 function abort {
@@ -67,10 +68,10 @@ function abort {
 }
 
 function print_cmd_path {
-  [[ "${1}" =~ '^-' ]] && abort "no such option '${1}'"
+  [[ "${1}" =~ '^-' ]] && abort "no such option \`${1}\`"
   cmd_abs_path="${CLIR_ROOT}/libexec/${1}.R"
-  [[ -f "${cmd_abs_path}" ]] || abort "no such command '${1}'"
-  echo ${cmd_abs_path}
+  [[ -f "${cmd_abs_path}" ]] || abort "no such command \`${1}\`"
+  echo "${cmd_abs_path}"
 }
 
 case "${1}" in
@@ -96,14 +97,16 @@ case "${1}" in
     exit 0
     ;;
   * )
-    subcmd_path="$(print_cmd_path ${1})"
-    if [[ ${#} -eq 1 ]]; then
-      print_usage "${subcmd_path}" | abort
-    elif [[ "${2}" = '-h' ]] || [[ "${2}" = '--help' ]]; then
-      print_usage "${subcmd_path}"
-    else
-      shift 1
-      bash -c "${R_CMD} --file=${subcmd_path} --args ${*}"
-    fi
+    subcmd="${1}"
     ;;
 esac
+
+subcmd_path="$(print_cmd_path ${subcmd})"
+if [[ ${#} -eq 1 ]]; then
+  print_usage "${subcmd_path}" | abort
+elif [[ "${2}" = '-h' ]] || [[ "${2}" = '--help' ]]; then
+  print_usage "${subcmd_path}"
+else
+  shift 1
+  bash -c "${R_CMD} --file=${subcmd_path} --args ${*}"
+fi
