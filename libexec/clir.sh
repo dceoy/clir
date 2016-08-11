@@ -13,6 +13,7 @@
 #   cran-install        Install or update R packages via CRAN
 #   github-install      Install or update R packages via GitHub
 #   install             Install or update R packages via CRAN (shortcut of `cran-install`)
+#   print-libpath       Print the path where R packages are installed
 #   set-cran            Set URLs of CRAN mirror sites
 #   set-drat            Set Drat repositories
 #   test-load           Test loading of installed R packages
