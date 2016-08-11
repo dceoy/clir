@@ -22,7 +22,7 @@
 
 set -e
 
-CLIR_VERSION='0.1.0'
+CLIR_VERSION='0.1.1'
 export CLIR_ROOT="$(dirname $(dirname ${0}))"
 
 if [[ "${1}" = '-d' ]] || [[ "${1}" = '--debug' ]]; then

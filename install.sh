@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# installer of clir
 
 set -e
 [[ "${1}" = '--debug' ]] && set -x
