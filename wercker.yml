@@ -4,23 +4,23 @@ box:
 build:
   steps:
     - script:
-        name: prepare required packages
+        name: Prepare required packages
         code: |
           apt-get -y update
           apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
     - script:
-        name: install clir
+        name: Install clir
         code: |
           curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
     - script:
-        name: set environment variables
+        name: Set environment variables
         code: |
           chsh -s /bin/bash root
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
           echo 'export R_LIBS="${HOME}/.clir/r/library"' >> ~/.bash_profile
           source ~/.bash_profile
     - script:
-        name: test clir
+        name: Test clir
         code: |
           clir test-load devtools drat
 push:
@@ -31,3 +31,11 @@ push:
         tag: latest
         repository: dceoy/clir
         registry: https://registry.hub.docker.com
+  after-steps:
+    - script:
+        code: |
+          apt-get -y update
+          apt-get -y install curl
+    - slack-notifier:
+        url: $SLACK_URL
+        channel: $SLACK_CHANNEL
