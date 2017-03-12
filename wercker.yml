@@ -23,19 +23,7 @@ build:
         name: Test clir
         code: |
           clir test-load devtools drat
-push:
-  steps:
-    - internal/docker-push:
-        username: dceoy
-        password: $DOCKER_PASS
-        tag: latest
-        repository: dceoy/clir
-        registry: https://registry.hub.docker.com
   after-steps:
-    - script:
-        code: |
-          apt-get -y update
-          apt-get -y install curl
     - slack-notifier:
         url: $SLACK_URL
         channel: $SLACK_CHANNEL
