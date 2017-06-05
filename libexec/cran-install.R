@@ -12,17 +12,19 @@ clir_root <- Sys.getenv('CLIR_ROOT')
 cran_txt_path <- paste0(clir_root, '/cran_url')
 drat_txt_path <- paste0(clir_root, '/drat_account')
 
-cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com/'), r_lib = .libPaths()[1]) {
+cran_install <- function(pkgs = NULL, repos = c(CRAN = 'https://cran.rstudio.com/'), update = TRUE, r_lib = .libPaths()[1]) {
   if(is.null(pkgs)) {
     update.packages(repos = repos, checkBuilt = TRUE, ask = FALSE, lib.loc = r_lib)
-  } else if(require('devtools')) {
-    withr::with_libpaths(r_lib, devtools::update_packages(pkgs = pkgs, repos = repos, dependencies = TRUE))
   } else {
-    if(length(pkgs_old <- intersect(pkgs, installed.packages(lib.loc = r_lib)[, 1])) > 0) {
-      update.packages(instPkgs = pkgs_old, repos = repos, checkBuilt = TRUE, ask = FALSE, lib.loc = r_lib)
-    }
-    if(length(pkgs_new <- setdiff(pkgs, installed.packages(lib.loc = r_lib)[, 1])) > 0) {
-      install.packages(pkgs = pkgs_new, repos = repos, lib = r_lib, dependencies = TRUE)
+    if(update) {
+      if(length(pkgs_old <- intersect(pkgs, installed.packages(lib.loc = r_lib)[, 1])) > 0) {
+        update.packages(instPkgs = pkgs_old, repos = repos, checkBuilt = TRUE, ask = FALSE, lib.loc = r_lib)
+      }
+      if(length(pkgs_new <- setdiff(pkgs, installed.packages(lib.loc = r_lib)[, 1])) > 0) {
+        install.packages(pkgs = pkgs_new, repos = repos, lib = r_lib, dependencies = TRUE)
+      }
+    } else {
+      install.packages(pkgs = pkgs, repos = repos, lib = r_lib, dependencies = TRUE)
     }
   }
 }

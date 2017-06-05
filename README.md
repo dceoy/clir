@@ -53,9 +53,9 @@ clir [ -h | --help | -v | --version ]
 |:------------------|:-------------------------------------------------------------------|:-----------------|
 | bioc-install      | Install or update R packages via Bioconductor                      | -                |
 | bitbucket-install | Install or update R packages via Bitbucket                         | devtools         |
-| cran-install      | Install or update R packages via CRAN                              | (devtools, drat) |
+| cran-install      | Install or update R packages via CRAN                              | (drat)           |
 | github-install    | Install or update R packages via GitHub                            | devtools         |
-| install           | Install or update R packages via CRAN (shortcut of `cran-install`) | (devtools, drat) |
+| install           | Install or update R packages via CRAN (shortcut of `cran-install`) | (drat)           |
 | print-libpath     | Print the path where R packages are installed                      | -                |
 | set-cran          | Set URLs of CRAN mirror sites                                      | -                |
 | set-drat          | Set Drat repositories                                              | -                |
