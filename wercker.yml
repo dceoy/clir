@@ -1,5 +1,5 @@
 box:
-  id: ubuntu
+  id: dceoy/wercker-base
   entrypoint: /bin/bash -c
 build:
   steps:
