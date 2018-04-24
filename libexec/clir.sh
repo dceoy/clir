@@ -22,7 +22,7 @@
 
 set -e
 
-CLIR_VERSION='0.1.1'
+CLIR_VERSION='0.1.2'
 export CLIR_ROOT="$(dirname $(dirname ${0}))"
 
 if [[ "${1}" = '-d' ]] || [[ "${1}" = '--debug' ]]; then
@@ -37,8 +37,13 @@ R_PATH="$(which R)"
   && R_CMD="${R_PATH} --verbose --vanilla" \
   || R_CMD="${R_PATH} --vanilla --slave"
 
-[[ -n "${R_LIBS}" ]] || export R_LIBS="${CLIR_ROOT}/r/library"
-[[ -d "${R_LIBS}" ]] || mkdir -p ${R_LIBS}
+if [[ -n "${R_LIBS_USER}" ]]; then
+  mkdir -p ${R_LIBS_USER}
+elif [[ -n "${R_LIBS}" ]]; then
+  mkdir -p ${R_LIBS}
+else
+  export R_LIBS_USER="${CLIR_ROOT}/r/library"
+  mkdir -p ${R_LIBS_USER}
 
 function print_version {
   echo "clir version ${CLIR_VERSION}"

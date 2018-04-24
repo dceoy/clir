@@ -31,7 +31,7 @@ Installation
     `install.sh` installs [devtools](https://github.com/hadley/devtools) and [drat](https://github.com/eddelbuettel/drat).
     Some of clir commands require them.
 
-3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}`.
+3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
 
     ```sh
     $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
