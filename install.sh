@@ -1,27 +1,41 @@
 #!/usr/bin/env bash
 #
-# installer of clir
+# Set up `clir`, command-line R package installer
 
 set -e
-[[ "${1}" = '--debug' ]] && set -x
 
-echo '
-This script install CLI-based R package installer `clir`.
-'
+if [[ "${1}" = '--debug' ]]; then
+  set -x
+  export DEBUG=1
+  R="R --verbose --vanilla"
+else
+  R="R --vanilla --slave"
+fi
 
-echo '
-<<<   Version of R to be used
-'
+function abort {
+  {
+    if [[ ${#} -eq 0 ]]; then
+      cat -
+    else
+      echo "install.sh: ${*}"
+    fi
+  } >&2
+  exit 1
+}
 
-R --version || exit 1
-echo "PATH: $(which R)"
-
-
-echo '
-<<<   Checking out from GitHub
-'
-
+CRAN_URL='https://cloud.r-project.org/'
 CLIR_ROOT="${HOME}/.clir"
+CLIR="${CLIR_ROOT}/bin/clir"
+R_LIBS_USER="${CLIR_ROOT}/r/library"
+
+echo '>>> Validate requirements'
+
+R --version | abort
+git --version | abort
+
+
+echo '>>> Check out clir from GitHub'
+
 if [[ -d "${CLIR_ROOT}" ]]; then
   cd "${CLIR_ROOT}" && git pull && cd -
 else
@@ -29,24 +43,22 @@ else
 fi
 
 
-echo '
-<<<   Installing required libraries
-'
+echo '>>> Install required libraries'
 
-CLIR="${CLIR_ROOT}/bin/clir"
-export R_LIBS="${CLIR_ROOT}/r/library"
-"${CLIR}" set-cran --default
-"${CLIR}" set-drat eddelbuettel
-echo 'Installing {devtools} and {drat} -----------------------------------------------
-'
-"${CLIR}" cran-install --quiet devtools drat
-Rscript -e 'devtools::has_devel()'
+export R_LIBS_USER
+${R} -q -e "install.packages(pkgs = 'docopt', dependencies = TRUE, repos = '${CRAN_URL}');"
+${R} -q -e "library('docopt');" | abort
+
+${CLIR} config --init
+echo 'Installing {devtools}, {drat}, and {yaml} --------------------------------------'
+${CLIR} install --quiet devtools drat yaml
+${R} -q -e 'devtools::has_devel()'
 echo
-"${CLIR}" test-load devtools drat
+${CLIR} validate devtools drat yaml
 
 
 echo '
-Done.
+>>> Done.
 
 
 To access the utility, set environment variables as follows:
@@ -54,8 +66,8 @@ To access the utility, set environment variables as follows:
   # Add clir/bin to ${PATH}
   $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
 
-  # Add clir/r/library to ${R_LIBS}
-  $ echo "export R_LIBS=${HOME}/.clir/r/library" >> ~/.bash_profile
+  # Add clir/r/library to ${R_LIBS_USER}
+  $ echo "export R_LIBS_USER=${HOME}/.clir/r/library" >> ~/.bash_profile
 
 If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
