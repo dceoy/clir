@@ -91,11 +91,3 @@ install_pkgs <- function(pkgs, clir_yml, from, r_lib = .libPaths(),
     }
   }
 }
-
-uninstall_pkgs <- function(pkgs, r_lib = .libPaths(), quiet = FALSE) {
-  if (require('devtools', quietly = TRUE)) {
-    withr::with_libpaths(r_lib, devtools::uninstall(pkg = pkgs, quiet = quiet))
-  } else {
-    remove.packages(pkgs = pkgs, lib = r_lib)
-  }
-}

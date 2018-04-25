@@ -1,6 +1,11 @@
 #!/usr/bin/env Rscript
 
 initilize_config <- function(clir_yml) {
+  r_dir <- stringr::str_c(dirname(clir_yml), '/')
+  if (! dir.exists(r_dir)) {
+    sapply(stringr::str_c(r_dir, c('', 'library')),
+           dir.create, showWarnings = FALSE)
+  }
   yaml::write_yaml(list(cran_urls = c('https://cran.rstudio.com/'),
                         drat_repos = c('eddelbuettel')),
                    file = clir_yml)
