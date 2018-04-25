@@ -22,7 +22,7 @@ build:
     - script:
         name: Test clir
         code: |
-          clir test-load devtools drat
+          clir validate devtools drat yaml
   after-steps:
     - slack-notifier:
         url: $SLACK_URL
