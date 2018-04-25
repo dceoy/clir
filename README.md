@@ -28,14 +28,14 @@ Installation
     $ .clir/install.sh
     ```
 
-    `install.sh` installs [devtools](https://github.com/hadley/devtools) and [drat](https://github.com/eddelbuettel/drat).
-    Some of clir commands require them.
+    `install.sh` installs docopt, yaml, devtools, and drat.
+    clir requires docopt and yaml, and uses devtools and drat if they are available.
 
 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
 
     ```sh
     $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-    $ echo 'export R_LIBS="${HOME}/.clir/r/library"' >> ~/.bash_profile
+    $ echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
     $ source ~/.bash_profile
     ```
 
@@ -44,31 +44,53 @@ Installation
 Usage
 -----
 
+```sh
+Install R packages from command line
+
+Usage:
+    clir config [--debug] [--init]
+    clir cran [--debug] [--list] <url>...
+    clir drat [--debug] <repo>...
+    clir update [--debug] [--quiet]
+    clir install [--debug] [--from=<type>] [--cpu=<int>] [--quiet] <pkg>...
+    clir uninstall [--debug] [--quiet] <pkg>...
+    clir validate [--debug] [--quiet] <pkg>...
+    clir session [--debug] [<pkg>...]
+    clir -h|--help
+    clir -v|--version
+
+Options:
+    --debug             Execute a command with debug messages
+    --init              Initialize configurations for clir
+    --list              List URLs of CRAN mirrors
+    --from=<type>       Select an installation type
+                        { cran, github, bitbucket, bioconductor }
+                        [default: cran]
+    --cpu=<int>         Limit a number of CPUs
+    --quiet             Suppress messages
+    -h, --help          Print help and exit
+    -v, --version       Print version and exit
+
+Commands:
+    config              Print configurations for clir
+    cran                Set URLs of CRAN mirror sites
+    drat                Set Drat repositories
+    update              Update R packages from CRAN
+    install             Install or update R packages
+    uninstall           Uninstall R packages
+    validate            Load installed R packages to validate them
+    session             Print session infomation
+
+Arguments:
+    <url>...            URLs of CRAN mirrors
+    <repo>...           Drat repository names
+    <pkg>...            R package names
 ```
-clir COMMAND [arg...]
-clir [ -h | --help | -v | --version ]
-```
-
-| command           | description                                                        | depends          |
-|:------------------|:-------------------------------------------------------------------|:-----------------|
-| bioc-install      | Install or update R packages via Bioconductor                      | -                |
-| bitbucket-install | Install or update R packages via Bitbucket                         | devtools         |
-| cran-install      | Install or update R packages via CRAN                              | (drat)           |
-| github-install    | Install or update R packages via GitHub                            | devtools         |
-| install           | Install or update R packages via CRAN (shortcut of `cran-install`) | (drat)           |
-| print-libpath     | Print the path where R packages are installed                      | -                |
-| set-cran          | Set URLs of CRAN mirror sites                                      | -                |
-| set-drat          | Set Drat repositories                                              | -                |
-| test-load         | Test loading of installed R packages                               | (devtools)       |
-
-\* Packages in () are not required, but they are used if installed.
-
-Run `clir COMMAND --help` for more information on a command.
 
 Example
 -------
 
 ```sh
 $ clir install dplyr tidyr ggplot2    # Install or update R packages via CRAN
-$ clir test-load dplyr tidyr ggplot2  # Test loading of installed R packages
+$ clir validate dplyr tidyr ggplot2   # Test loading of installed R packages
 ```

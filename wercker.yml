@@ -1,3 +1,4 @@
+---
 box:
   id: dceoy/wercker-base
   entrypoint: /bin/bash -c
@@ -11,19 +12,21 @@ build:
     - script:
         name: Install clir
         code: |
-          curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
+          curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh \
+            | bash
     - script:
         name: Set environment variables
         code: |
           chsh -s /bin/bash root
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
           echo 'export R_LIBS="${HOME}/.clir/r/library"' >> ~/.bash_profile
-          source ~/.bash_profile
     - script:
         name: Test clir
         code: |
+          source ~/.bash_profile
           clir install foreach lintr
-          clir validate devtools drat foreach lintr yaml
+          clir validate devtools drat foreach lintr
+          clir uninstall foreach lintr
   after-steps:
     - slack-notifier:
         url: $SLACK_URL
