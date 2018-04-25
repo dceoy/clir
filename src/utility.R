@@ -8,9 +8,12 @@ initilize_config <- function(config_yml) {
 }
 
 print_config <- function(config_yml, r_lib = .libPaths()) {
-  print(list(clir = yaml::read_yaml(config_yml),
-             libpath = r_lib,
-             r = version))
+  if (file.exists(config_yml)) {
+    cf <- yaml::read_yaml(config_yml)
+  } else {
+    cf <- NULL
+  }
+  print(list(clir = cf, libpath = r_lib, r = version))
 }
 
 add_config <- function(new, key, config_yml) {

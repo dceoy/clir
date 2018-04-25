@@ -30,24 +30,24 @@ R_LIBS_USER="${CLIR_ROOT}/r/library"
 
 echo '>>> Validate requirements'
 
-R --version | abort
-git --version | abort
+R --version || abort 'R is not found.'
+git --version || abort 'Git is not found.'
 
 
 echo '>>> Check out clir from GitHub'
 
 if [[ -d "${CLIR_ROOT}" ]]; then
-  cd "${CLIR_ROOT}" && git pull && cd -
+  cd ${CLIR_ROOT} && git pull && cd -
 else
-  git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
+  git clone https://github.com/dceoy/clir.git ${CLIR_ROOT}
 fi
 
 
 echo '>>> Install required libraries'
 
 export R_LIBS_USER
-${R} -q -e "install.packages(pkgs = 'docopt', dependencies = TRUE, repos = '${CRAN_URL}');"
-${R} -q -e "library('docopt');" | abort
+${R} -q -e "install.packages(pkgs = c('docopt', 'yaml'), dependencies = TRUE, repos = '${CRAN_URL}');"
+${R} -q -e "lapply(c('docopt', 'yaml'), library, character.only = TRUE);" || abort 'Package installation faild.'
 
 ${CLIR} config --init
 echo 'Installing {devtools}, {drat}, and {yaml} --------------------------------------'

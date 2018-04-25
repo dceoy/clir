@@ -7,8 +7,7 @@ Usage:
     clir cran [--debug] [--list] <url>...
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
-    clir install [--debug] [--from=<type>] [--cpu=<int>] [--no-upgrade]
-                 [--quiet] <pkg>...
+    clir install [--debug] [--from=<type>] [--cpu=<int>] [--quiet] <pkg>...
     clir uninstall [--debug] [--quiet] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
@@ -22,8 +21,7 @@ Options:
     --from=<type>       Select an installation type
                         { cran, github, bitbucket, bioconductor }
                         [default: cran]
-    --cpu=<int>         Set a number of CPUs [default: 1]
-    --no-upgrade        Skip upgrade
+    --cpu=<int>         Limit a number of CPUs
     --quiet             Suppress messages
     -h, --help          Print help and exit
     -v, --version       Print version and exit
@@ -57,7 +55,7 @@ fetch_clir_root <- function() {
 main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   options(warn = 1, verbose = opts[['--debug']],
           Ncpus = ifelse(is.null(opts[['--cpu']]),
-                         1, as.integer(opts[['--cpu']])))
+                         parallel::detectCores(), as.integer(opts[['--cpu']])))
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE, quietly = TRUE),
@@ -86,8 +84,7 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
                      quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
     install_pkgs(pkgs = opts[['<pkg>']], config_yml = config_yml, r_lib = r_lib,
-                 from = opts[['--from']], upgrade = (! opts[['--no-upgrade']]),
-                 quiet = opts[['--quiet']])
+                 from = opts[['--from']], quiet = opts[['--quiet']])
   } else if (opts[['uninstall']]) {
     uninstall_pkgs(pkgs = opts[['<pkg>']], r_lib = r_lib,
                    quiet = opts[['--quiet']])

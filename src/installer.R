@@ -8,20 +8,30 @@ update_cran_pkgs <- function(config_yml, r_lib = .libPaths(), quiet = FALSE) {
 
 load_repos <- function(config_yml, quiet = FALSE,
                        default_cran = 'https://cran.rstudio.com/') {
-  cf <- yaml::read_yaml(config_yml)
-  if (require('drat', quietly = TRUE) && ('drat_repos' %in% names(cf))) {
-    drat:::addRepo(account = cf$drat_repos)
-  }
-  if ('cran_urls' %in% names(cf)) {
-    repos <- cf$cran_urls
+  if (file.exists(config_yml)) {
+    cf <- yaml::read_yaml(config_yml)
+    if (require('drat', quietly = TRUE) && ('drat_repos' %in% names(cf))) {
+      drat:::addRepo(account = cf$drat_repos)
+    }
+    repos <- getOption('repos')
+    if ('cran_urls' %in% names(cf)) {
+      cran <- cf$cran_urls[1]
+    } else if (repos['CRAN'] != '@CRAN@') {
+      cran <- default_cran
+    } else {
+      cran <- repos['CRAN']
+    }
+    new_repos <- c(CLAN = cran, repos[names(repos) != 'CRAN'])
   } else {
-    repos <- default_cran
+    repos <- getOption('repos')
+    new_repos <- c(CLAN = default_cran, repos[names(repos) != 'CRAN'])
   }
-  return(repos)
+  return(new_repos)
 }
 
 install_pkgs <- function(pkgs, config_yml, from, r_lib = .libPaths(),
                          upgrade = TRUE, depend = TRUE, quiet = FALSE) {
+  repos <- load_repos(config_yml = config_yml, quiet = quiet)
   installed_pkgs <- installed.packages(lib.loc = r_lib)[, 1]
   old_pkgs <- intersect(pkgs, installed_pkgs)
   new_pkgs <- setdiff(pkgs, installed_pkgs)
@@ -30,12 +40,12 @@ install_pkgs <- function(pkgs, config_yml, from, r_lib = .libPaths(),
       if (require('devtools', quietly = TRUE)) {
         if (upgrade) {
           withr::with_libpaths(r_lib,
-                               devtools::install_cran(pkgs,
+                               devtools::install_cran(pkgs, repos = repos,
                                                       dependencies = depend,
                                                       quiet = quiet))
         } else if (length(old_pkgs) > 0) {
           withr::with_libpaths(r_lib,
-                               devtools::install_cran(old_pkgs,
+                               devtools::install_cran(old_pkgs, repos = repos,
                                                       dependencies = depend,
                                                       quiet = quiet))
         }

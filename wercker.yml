@@ -22,7 +22,8 @@ build:
     - script:
         name: Test clir
         code: |
-          clir validate devtools drat yaml
+          clir install foreach lintr
+          clir validate devtools drat foreach lintr yaml
   after-steps:
     - slack-notifier:
         url: $SLACK_URL
