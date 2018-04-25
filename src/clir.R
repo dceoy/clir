@@ -56,6 +56,7 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   options(warn = 1, verbose = opts[['--debug']],
           Ncpus = ifelse(is.null(opts[['--cpu']]),
                          parallel::detectCores(), as.integer(opts[['--cpu']])))
+  clir_yml <- paste0(root_dir, 'r/clir.yml')
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE, quietly = TRUE),
@@ -63,27 +64,23 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
                                      c('utility.R', 'installer.R')),
                               source))
   if (opts[['--debug']]) print(loaded)
-  config_yml <- paste0(root_dir, 'r/clir.yml')
+  if (! file.exists(clir_yml)) initilize_config(clir_yml = clir_yml)
   if (opts[['config']]) {
-    if (opts[['--init']]) {
-      initilize_config(config_yml = config_yml)
-    }
-    print_config(config_yml = config_yml, r_lib = r_lib)
+    if (opts[['--init']]) initilize_config(clir_yml = clir_yml)
+    print_config(clir_yml = clir_yml, r_lib = r_lib)
   } else if (opts[['cran']]) {
     if (opts[['--list']]) {
       print_cran_mirrors(https = TRUE)
     } else {
-      add_config(new = opts[['<url>']], key = 'cran_urls',
-                 config_yml = config_yml)
+      add_config(new = opts[['<url>']], key = 'cran_urls', clir_yml = clir_yml)
     }
   } else if (opts[['drat']]) {
-    add_config(new = opts[['<repo>']], key = 'drat_repos',
-               config_yml = config_yml)
+    add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (opts[['update']]) {
-    update_cran_pkgs(config_yml = config_yml, r_lib = r_lib,
+    update_cran_pkgs(clir_yml = clir_yml, r_lib = r_lib,
                      quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
-    install_pkgs(pkgs = opts[['<pkg>']], config_yml = config_yml, r_lib = r_lib,
+    install_pkgs(pkgs = opts[['<pkg>']], clir_yml = clir_yml, r_lib = r_lib,
                  from = opts[['--from']], quiet = opts[['--quiet']])
   } else if (opts[['uninstall']]) {
     uninstall_pkgs(pkgs = opts[['<pkg>']], r_lib = r_lib,

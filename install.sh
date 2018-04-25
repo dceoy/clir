@@ -5,10 +5,11 @@
 set -e
 
 if [[ "${1}" = '--debug' ]]; then
-  set -x
+  set -ux
   export DEBUG=1
   R="R --verbose --vanilla"
 else
+  set -u
   R="R --vanilla --slave"
 fi
 
@@ -29,32 +30,31 @@ CLIR="${CLIR_ROOT}/bin/clir"
 R_LIBS_USER="${CLIR_ROOT}/r/library"
 
 echo '>>> Validate requirements'
-
 R --version || abort 'R is not found.'
 git --version || abort 'Git is not found.'
-
+echo
 
 echo '>>> Check out clir from GitHub'
-
 if [[ -d "${CLIR_ROOT}" ]]; then
   cd ${CLIR_ROOT} && git pull && cd -
 else
   git clone https://github.com/dceoy/clir.git ${CLIR_ROOT}
 fi
-
+echo
 
 echo '>>> Install required libraries'
-
 export R_LIBS_USER
 ${R} -q -e "install.packages(pkgs = c('docopt', 'yaml'), dependencies = TRUE, repos = '${CRAN_URL}');"
-${R} -q -e "lapply(c('docopt', 'yaml'), library, character.only = TRUE);" || abort 'Package installation faild.'
-
-${CLIR} config --init
-echo 'Installing {devtools}, {drat}, and {yaml} --------------------------------------'
-${CLIR} install --quiet devtools drat yaml
-${R} -q -e 'devtools::has_devel()'
+${R} -q -e "sapply(c('docopt', 'yaml'), library, character.only = TRUE);" || abort 'Package installation faild.'
 echo
-${CLIR} validate devtools drat yaml
+
+echo '>>> Install {devtools} and {drat}'
+${CLIR} install devtools drat
+echo
+
+echo '>>> Validate {devtools} and {drat}'
+${R} -q -e 'devtools::has_devel()'
+${CLIR} validate devtools drat
 
 
 echo '
