@@ -58,7 +58,7 @@ Usage:
     clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
-    clir install [--debug] [--quiet] [--no-upgrade] [--from=<type>] <pkg>...
+    clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
     clir uninstall [--debug] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
@@ -69,8 +69,8 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
-    --from=<type>       Install R packages using devtools
-                        { cran, github, bitbucket, bioconductor }
+    --devt=<type>       Install R packages using `devtools::install_<type>`
+                        [choices: cran, github, bitbucket, bioc]
     --no-upgrade        Skip upgrade of old R packages
     --quiet             Suppress messages
     -h, --help          Print help and exit

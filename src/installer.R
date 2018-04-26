@@ -22,14 +22,14 @@ load_repos <- function(clir_yml, quiet = FALSE) {
   return(c(CLAN = cran, repos[names(repos) != 'CRAN']))
 }
 
-install_pkgs <- function(pkgs, clir_yml, from, r_lib = .libPaths(),
+install_pkgs <- function(pkgs, clir_yml, devt, r_lib = .libPaths(),
                          upgrade = TRUE, depend = TRUE, quiet = FALSE) {
   repos <- load_repos(clir_yml = clir_yml, quiet = quiet)
   installed_pkgs <- installed.packages(lib.loc = r_lib)[, 1]
   old_pkgs <- intersect(pkgs, installed_pkgs)
   new_pkgs <- setdiff(pkgs, installed_pkgs)
   if (upgrade || (length(new_pkgs) > 0)) {
-    if (is.null(from)) {
+    if (is.null(devt)) {
       if (upgrade && (length(old_pkgs) > 0)) {
         update.packages(instPkgs = old_pkgs, repos = repos, checkBuilt = TRUE,
                         ask = FALSE, lib.loc = r_lib, quiet = quiet)
@@ -38,7 +38,7 @@ install_pkgs <- function(pkgs, clir_yml, from, r_lib = .libPaths(),
         install.packages(pkgs = new_pkgs, repos = repos, lib = r_lib,
                          dependencies = depend, quiet = quiet)
       }
-    } else if (from %in% c('cran', 'github', 'bitbucket', 'bioconductor')) {
+    } else if (devt %in% c('cran', 'github', 'bitbucket', 'bioc')) {
       if (! require('devtools', quietly = TRUE)) {
         install.packages(pkgs = 'devtools', repos = repos, lib = r_lib,
                          dependencies = TRUE, quiet = quiet)
@@ -51,11 +51,11 @@ install_pkgs <- function(pkgs, clir_yml, from, r_lib = .libPaths(),
         } else {
           targets <- new_pkgs
         }
-        f <- switch(from,
+        f <- switch(devt,
                     'cran' = devtools::install_cran,
                     'github' = devtools::install_github,
                     'bitbucket' = devtools::install_bitbucket,
-                    'bioconductor' = devtools::install_bioc)
+                    'bioc' = devtools::install_bioc)
         withr::with_libpaths(r_lib,
                              f(targets, dependencies = depend, quiet = quiet))
       }
