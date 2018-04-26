@@ -76,11 +76,11 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
     add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (opts[['update']]) {
     update_cran_pkgs(clir_yml = clir_yml, r_lib = r_lib,
-                     upgrade = (! opts[['--no-upgrade']]),
                      quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
     install_pkgs(pkgs = opts[['<pkg>']], clir_yml = clir_yml, r_lib = r_lib,
-                 devt = opts[['--devt']], quiet = opts[['--quiet']])
+                 devt = opts[['--devt']], upgrade = (! opts[['--no-upgrade']]),
+                 quiet = opts[['--quiet']])
   } else if (opts[['uninstall']]) {
     remove.packages(pkgs = opts[['<pkg>']], lib = r_lib)
   } else if (opts[['validate']]) {
