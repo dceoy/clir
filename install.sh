@@ -54,7 +54,6 @@ sapply(deps, library, character.only = TRUE);
 echo
 
 echo '>>> Validate installed packages'
-echo 'devtools::has_devel()' | ${R} -q
 ${CLIR} validate devtools docopt drat yaml
 
 # shellcheck disable=SC2016
