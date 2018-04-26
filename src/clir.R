@@ -52,12 +52,12 @@ fetch_clir_root <- function() {
 }
 
 main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = opts[['--debug']],
-          Ncpus = parallel::detectCores())
+  options(warn = 1, verbose = opts[['--debug']])
   clir_yml <- paste0(root_dir, 'r/clir.yml')
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
-                              require, character.only = TRUE, quietly = TRUE),
+                              require, character.only = TRUE,
+                              quietly = (! opts[['--debug']])),
                  src = sapply(paste0(root_dir, 'src/',
                                      c('utility.R', 'installer.R')),
                               source))
