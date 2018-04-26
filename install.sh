@@ -42,19 +42,20 @@ else
 fi
 echo
 
-echo '>>> Install required libraries'
+echo '>>> Install dependencies'
 export R_LIBS_USER
-${R} -q -e "install.packages(pkgs = c('docopt', 'yaml'), dependencies = TRUE, repos = '${CRAN_URL}');"
-${R} -q -e "sapply(c('docopt', 'yaml'), library, character.only = TRUE);" || abort 'Package installation faild.'
+echo "
+options(repos = c(CRAN = '${CRAN_URL}'));
+deps <- c('docopt', 'yaml', 'devtools', 'drat');
+if (! require('devtools')) install.packages(pkgs = 'devtools', dependencies = TRUE);
+devtools::install_cran(deps, dependencies = TRUE);
+sapply(deps, library, character.only = TRUE);
+" | ${R} -q || abort 'Package installation faild.'
 echo
 
-echo '>>> Install {devtools} and {drat}'
-${CLIR} install devtools drat
-echo
-
-echo '>>> Validate {devtools} and {drat}'
-${R} -q -e 'devtools::has_devel()'
-${CLIR} validate devtools drat
+echo '>>> Validate installed packages'
+echo 'devtools::has_devel()' | ${R} -q
+${CLIR} validate devtools docopt drat yaml
 
 
 echo '
