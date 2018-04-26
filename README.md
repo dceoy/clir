@@ -28,7 +28,13 @@ Installation
     $ .clir/install.sh
     ```
 
-    `install.sh` installs docopt, yaml, devtools, and drat.
+    `install.sh` installs the following R packages:
+
+    - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
+    - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
+    - [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
+    - [drat](https://cran.r-project.org/web/packages/drat/index.html)
+
     clir requires docopt and yaml, and uses devtools and drat if they are available.
 
 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
@@ -45,11 +51,11 @@ Usage
 -----
 
 ```sh
-Install R packages from command line
+Command Line Interface for R package installation
 
 Usage:
     clir config [--debug] [--init]
-    clir cran [--debug] [--list] <url>...
+    clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
     clir install [--debug] [--quiet] [--from=<type>] [--cpu=<int>] <pkg>...
@@ -63,9 +69,8 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
-    --from=<type>       Select an installation type
+    --from=<type>       Select an installation type [default: cran]
                         { cran, github, bitbucket, bioconductor }
-                        [default: cran]
     --cpu=<int>         Limit a number of CPUs
     --quiet             Suppress messages
     -h, --help          Print help and exit
@@ -75,10 +80,10 @@ Commands:
     config              Print configurations for clir
     cran                Set URLs of CRAN mirror sites
     drat                Set Drat repositories
-    update              Update R packages from CRAN
+    update              Update R packages installed via CRAN
     install             Install or update R packages
     uninstall           Uninstall R packages
-    validate            Load installed R packages to validate them
+    validate            Load R packages to validate their installation
     session             Print session infomation
 
 Arguments:
