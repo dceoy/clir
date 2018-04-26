@@ -35,7 +35,7 @@ Installation
     - [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
     - [drat](https://cran.r-project.org/web/packages/drat/index.html)
 
-    clir requires docopt and yaml, and uses devtools and drat if they are available.
+    clir depends on docopt and yaml, and uses devtools and drat additionally if they are available.
 
 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
 
@@ -58,7 +58,7 @@ Usage:
     clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
-    clir install [--debug] [--quiet] [--from=<type>] [--cpu=<int>] <pkg>...
+    clir install [--debug] [--quiet] [--no-upgrade] [--from=<type>] <pkg>...
     clir uninstall [--debug] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
@@ -69,9 +69,9 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
-    --from=<type>       Select an installation type [default: cran]
+    --from=<type>       Install R packages using devtools
                         { cran, github, bitbucket, bioconductor }
-    --cpu=<int>         Limit a number of CPUs
+    --no-upgrade        Skip upgrade of old R packages
     --quiet             Suppress messages
     -h, --help          Print help and exit
     -v, --version       Print version and exit

@@ -29,65 +29,40 @@ install_pkgs <- function(pkgs, clir_yml, from, r_lib = .libPaths(),
   old_pkgs <- intersect(pkgs, installed_pkgs)
   new_pkgs <- setdiff(pkgs, installed_pkgs)
   if (upgrade || (length(new_pkgs) > 0)) {
-    if (from == 'cran') {
-      if (require('devtools', quietly = TRUE)) {
-        if (upgrade) {
-          withr::with_libpaths(r_lib,
-                               devtools::update_packages(pkgs, repos = repos,
-                                                         dependencies = depend))
-        } else if (length(old_pkgs) > 0) {
-          withr::with_libpaths(r_lib,
-                               devtools::update_packages(old_pkgs,
-                                                         repos = repos,
-                                                         dependencies = depend))
-        }
+    if (is.null(from)) {
+      if (upgrade && (length(old_pkgs) > 0)) {
+        update.packages(instPkgs = old_pkgs, repos = repos, checkBuilt = TRUE,
+                        ask = FALSE, lib.loc = r_lib, quiet = quiet)
+      }
+      if (length(new_pkgs) > 0) {
+        install.packages(pkgs = new_pkgs, repos = repos, lib = r_lib,
+                         dependencies = depend, quiet = quiet)
+      }
+    } else if (from %in% c('cran', 'github', 'bitbucket', 'bioconductor')) {
+      if (! require('devtools', quietly = TRUE)) {
+        install.packages(pkgs = 'devtools', repos = repos, lib = r_lib,
+                         dependencies = TRUE, quiet = quiet)
+      }
+      if (! require('devtools', quietly = TRUE)) {
+        stop('Loading of devtools failed.')
       } else {
-        if (upgrade && (length(old_pkgs) > 0)) {
-          update.packages(instPkgs = old_pkgs, repos = repos, checkBuilt = TRUE,
-                          ask = FALSE, lib.loc = r_lib, quiet = quiet)
+        if (upgrade) {
+          targets <- pkgs
+        } else {
+          targets <- new_pkgs
         }
-        if (length(new_pkgs) > 0) {
-          install.packages(pkgs = new_pkgs, repos = repos, lib = r_lib,
-                           dependencies = depend, quiet = quiet)
-        }
-      }
-    } else if (from == 'github') {
-      if (upgrade) {
+        f <- switch(from,
+                    'cran' = devtools::install_cran,
+                    'github' = devtools::install_github,
+                    'bitbucket' = devtools::install_bitbucket,
+                    'bioconductor' = devtools::install_bioc)
         withr::with_libpaths(r_lib,
-                             devtools::install_github(pkgs,
-                                                      dependencies = depend,
-                                                      quiet = quiet))
-      } else if (length(old_pkgs) > 0) {
-        withr::with_libpaths(r_lib,
-                             devtools::install_github(old_pkgs,
-                                                      dependencies = depend,
-                                                      quiet = quiet))
-      }
-    } else if (from == 'bitbucket') {
-      if (upgrade) {
-        withr::with_libpaths(r_lib,
-                             devtools::install_bitbucket(pkgs,
-                                                         dependencies = depend,
-                                                         quiet = quiet))
-      } else if (length(old_pkgs) > 0) {
-        withr::with_libpaths(r_lib,
-                             devtools::install_bitbucket(old_pkgs,
-                                                         dependencies = depend,
-                                                         quiet = quiet))
-      }
-    } else if (from == 'bioconductor') {
-      if (upgrade) {
-        withr::with_libpaths(r_lib,
-                             devtools::install_bioc(pkgs, dependencies = depend,
-                                                    quiet = quiet))
-      } else if (length(old_pkgs) > 0) {
-        withr::with_libpaths(r_lib,
-                             devtools::install_bioc(old_pkgs,
-                                                    dependencies = depend,
-                                                    quiet = quiet))
+                             f(targets, dependencies = depend, quiet = quiet))
       }
     } else {
-      stop('Invalid installation type')
+      stop('Invalid installation type.')
     }
+  } else {
+    message('The packages already installed.')
   }
 }

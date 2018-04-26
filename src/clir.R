@@ -7,7 +7,7 @@ Usage:
     clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
-    clir install [--debug] [--quiet] [--from=<type>] [--cpu=<int>] <pkg>...
+    clir install [--debug] [--quiet] [--no-upgrade] [--from=<type>] <pkg>...
     clir uninstall [--debug] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
@@ -18,9 +18,9 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
-    --from=<type>       Select an installation type [default: cran]
+    --from=<type>       Install R packages using devtools
                         { cran, github, bitbucket, bioconductor }
-    --cpu=<int>         Limit a number of CPUs
+    --no-upgrade        Skip upgrade of old R packages
     --quiet             Suppress messages
     -h, --help          Print help and exit
     -v, --version       Print version and exit
@@ -40,7 +40,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.0'
+clir_version <- 'v1.0.1'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -53,8 +53,7 @@ fetch_clir_root <- function() {
 
 main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   options(warn = 1, verbose = opts[['--debug']],
-          Ncpus = ifelse(is.null(opts[['--cpu']]),
-                         parallel::detectCores(), as.integer(opts[['--cpu']])))
+          Ncpus = parallel::detectCores())
   clir_yml <- paste0(root_dir, 'r/clir.yml')
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
@@ -77,6 +76,7 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
     add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (opts[['update']]) {
     update_cran_pkgs(clir_yml = clir_yml, r_lib = r_lib,
+                     upgrade = (! opts[['--no-upgrade']]),
                      quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
     install_pkgs(pkgs = opts[['<pkg>']], clir_yml = clir_yml, r_lib = r_lib,
@@ -86,7 +86,7 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   } else if (opts[['validate']]) {
     validate_loading(pkgs = opts[['<pkg>']], quiet = opts[['--quiet']])
   } else if (opts[['session']]) {
-    devtools::session_info(pkgs = opts[['<pkg>']], include_base = TRUE)
+    print_sessions(pkgs = opts[['<pkg>']])
   } else {
     stop('invalid subcommand')
   }
