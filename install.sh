@@ -36,9 +36,9 @@ echo
 
 echo '>>> Check out clir from GitHub'
 if [[ -d "${CLIR_ROOT}" ]]; then
-  cd ${CLIR_ROOT} && git pull && cd -
+  cd "${CLIR_ROOT}" && git pull && cd -
 else
-  git clone https://github.com/dceoy/clir.git ${CLIR_ROOT}
+  git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
 fi
 echo
 
@@ -57,7 +57,7 @@ echo '>>> Validate installed packages'
 echo 'devtools::has_devel()' | ${R} -q
 ${CLIR} validate devtools docopt drat yaml
 
-
+# shellcheck disable=SC2016
 echo '
 >>> Done.
 
