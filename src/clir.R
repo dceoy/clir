@@ -53,19 +53,19 @@ fetch_clir_root <- function() {
 
 main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   options(warn = 1, verbose = opts[['--debug']])
-  clir_yml <- paste0(root_dir, 'r/clir.yml')
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
                               quietly = (! opts[['--debug']])),
-                 src = sapply(paste0(root_dir, 'src/',
-                                     c('utility.R', 'installer.R')),
-                              source))
-  if (opts[['--debug']]) print(loaded)
-  if (! file.exists(clir_yml)) initilize_config(clir_yml = clir_yml)
+                 src = source(paste0(root_dir, 'src/util.R')))
+  clir_yml <- paste0(root_dir, 'r/clir.yml')
+  repos <- load_repos(clir_yml = clir_yml, quiet = opts[['--quiet']])
+  if (opts[['--debug']]) {
+    print(c(loaded, repos = repos))
+  }
   if (opts[['config']]) {
-    if (opts[['--init']]) initilize_config(clir_yml = clir_yml)
-    print_config(clir_yml = clir_yml, r_lib = r_lib)
+    print_config(clir_yml = clir_yml, r_lib = r_lib,
+                 initialize = opts[['--init']])
   } else if (opts[['cran']]) {
     if (opts[['--list']]) {
       print_cran_mirrors(https = TRUE)
@@ -75,10 +75,10 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   } else if (opts[['drat']]) {
     add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (opts[['update']]) {
-    update_cran_pkgs(clir_yml = clir_yml, r_lib = r_lib,
-                     quiet = opts[['--quiet']])
+    update.packages(lib.loc = r_lib, repos = repos, checkBuilt = TRUE,
+                    ask = FALSE, quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
-    install_pkgs(pkgs = opts[['<pkg>']], clir_yml = clir_yml, r_lib = r_lib,
+    install_pkgs(pkgs = opts[['<pkg>']], repos = repos, r_lib = r_lib,
                  devt = opts[['--devt']], upgrade = (! opts[['--no-upgrade']]),
                  quiet = opts[['--quiet']])
   } else if (opts[['uninstall']]) {
