@@ -1,32 +1,44 @@
 ---
 box:
-  id: dceoy/wercker-base
+  id: dceoy/wercker-base:ansible
   entrypoint: /bin/bash -c
 build:
   steps:
-    - script:
-        name: Prepare required packages
-        code: |
-          apt-get -y update
-          apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
     - script:
         name: Install clir
         code: |
           curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh \
             | bash
+          clir --version
     - script:
         name: Set environment variables
         code: |
           chsh -s /bin/bash root
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-          echo 'export R_LIBS="${HOME}/.clir/r/library"' >> ~/.bash_profile
-    - script:
-        name: Test clir
-        code: |
+          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
           source ~/.bash_profile
-          clir install foreach lintr
-          clir validate devtools drat foreach lintr
-          clir uninstall foreach lintr
+    - script:
+        name: Test configuration
+        code: |
+          clir config
+          clir cran --list
+          clir cran https://cran.ism.ac.jp/
+          clir drat dmlc
+          clir config
+          clir config --init
+    - script:
+        name: Test installation
+        code: |
+          clir update
+          clir install foreach doSNOW
+          clir validate foreach doSNOW
+          clir session foreach doSNOW
+    - script:
+        name: Test uninstallation
+        code: |
+          clir uninstall foreach doSNOW
+          clir validate foreach doSNOW || :
+          clir session foreach doSNOW || :
   after-steps:
     - slack-notifier:
         url: $SLACK_URL
