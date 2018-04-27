@@ -12,7 +12,7 @@ Installation
 
     ```sh
     # Ubuntu
-    $ sudo apt-get -y install r-base-dev libcurl4-gnutls-dev libssl-dev git
+    $ sudo apt-get -y install r-base libcurl4-gnutls-dev libssl-dev git
 
     # CentOS
     $ sudo yum -y install R-devel libcurl-devel openssl-devel git
@@ -40,12 +40,12 @@ Installation
 3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
 
     ```sh
-    $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-    $ echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
-    $ source ~/.bash_profile
+    $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bashrc
+    $ echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bashrc
+    $ source ~/.bashrc
     ```
 
-    If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
+    If you use Zsh, modify `~/.zshrc` instead of `~/.bashrc`.
 
 Usage
 -----

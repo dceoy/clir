@@ -1,22 +1,27 @@
 ---
 box:
-  id: dceoy/wercker-base:ansible
+  id: dceoy/wercker-base
   entrypoint: /bin/bash -c
 build:
   steps:
+    - script:
+        name: Prepare required packages
+        code: |
+          apt-get -y update
+          apt-get -y install r-base libcurl4-gnutls-dev libssl-dev git
     - script:
         name: Install clir
         code: |
           curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh \
             | bash
-          clir --version
     - script:
         name: Set environment variables
         code: |
           chsh -s /bin/bash root
-          echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
-          source ~/.bash_profile
+          echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bashrc
+          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bashrc
+          source ~/.bashrc
+          clir --version
     - script:
         name: Test configuration
         code: |
