@@ -27,7 +27,7 @@ Installation
     $ curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
     ```
 
-    `install.sh` installs the following R packages:
+    `install.sh` clones clir into `~/.clir/` and installs the following R packages:
 
     - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
     - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)

@@ -69,8 +69,10 @@ main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
   } else if (opts[['cran']]) {
     if (opts[['--list']]) {
       print_cran_mirrors(https = TRUE)
-    } else {
+    } else if (length(opts[['<url>']]) > 0) {
       add_config(new = opts[['<url>']], key = 'cran_urls', clir_yml = clir_yml)
+    } else {
+      message('URLs or --list must be passed for this command.')
     }
   } else if (opts[['drat']]) {
     add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)

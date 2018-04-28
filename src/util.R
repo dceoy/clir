@@ -123,9 +123,11 @@ validate_loading <- function(pkgs, quiet = FALSE) {
 }
 
 print_sessions <- function(pkgs) {
-  if (require('devtools', quietly = TRUE)) {
+  if (! require('devtools', quietly = TRUE)) {
+    stop('This command requires devtools.')
+  } else if (length(pkgs) > 0) {
     devtools::session_info(pkgs = pkgs, include_base = TRUE)
   } else {
-    stop('This command requires devtools.')
+    devtools::session_info(include_base = TRUE)
   }
 }
