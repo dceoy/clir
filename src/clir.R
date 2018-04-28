@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-'R Package Manager for Command Line Interface
+'R package manager for command line interface
 
 Usage:
     clir config [--debug] [--init]

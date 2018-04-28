@@ -1,7 +1,7 @@
 clir
 ====
 
-R Package Manager for Command Line Interface
+R package manager for command line interface
 
 [![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/m "wercker status")](https://app.wercker.com/project/bykey/e04414d822f906b0704855f5c2d600bf)
 
@@ -21,11 +21,10 @@ Installation
     $ sudo dnf -y install R-devel libcurl-devel openssl-devel git
     ```
 
-2.  Check out clir into `~/.clir` and run `install.sh`.
+2.  Run `install.sh`.
 
     ```sh
-    $ git clone https://github.com/dceoy/clir.git ~/.clir
-    $ .clir/install.sh
+    $ curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
     ```
 
     `install.sh` installs the following R packages:
@@ -51,7 +50,7 @@ Usage
 -----
 
 ```sh
-R Package Manager for Command Line Interface
+R package manager for command line interface
 
 Usage:
     clir config [--debug] [--init]
