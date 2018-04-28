@@ -45,20 +45,21 @@ clir_version <- 'v1.0.2'
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
   fa <- ca[grepl('^--file=', ca)]
-  return(paste0(dirname(normalizePath(ifelse(length(fa) == 1,
-                                             dirname(sub('--file=', '', fa)),
-                                             getwd()))),
-                '/'))
+  return(dirname(normalizePath(ifelse(length(fa) == 1,
+                                      dirname(sub('--file=', '', fa)),
+                                      getwd()))))
 }
 
-main <- function(opts, root_dir = fetch_clir_root(), r_lib = .libPaths()[1]) {
+main <- function(opts, clir_root_dir = fetch_clir_root(),
+                 r_lib = .libPaths()[1]) {
   options(warn = 1, verbose = opts[['--debug']])
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
                               quietly = (! opts[['--debug']])),
-                 src = source(paste0(root_dir, 'src/util.R')))
-  clir_yml <- paste0(root_dir, 'r/clir.yml')
+                 src = source(file.path(clir_root_dir, 'src/util.R')))
+  make_clir_dirs(clir_root_dir = clir_root_dir)
+  clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
   repos <- load_repos(clir_yml = clir_yml, quiet = opts[['--quiet']])
   if (opts[['--debug']]) {
     print(c(loaded, repos = repos))

@@ -1,10 +1,11 @@
 #!/usr/bin/env Rscript
 
+make_clir_dirs <- function(clir_root_dir, exist_ok = TRUE) {
+  sapply(file.path(clir_root_dir, c('r', 'r/library')),
+         dir.create, showWarnings = (! exist_ok))
+}
+
 initilize_config <- function(clir_yml) {
-  r_dir <- stringr::str_c(dirname(clir_yml), '/')
-  if (! dir.exists(r_dir)) {
-    dir.create(r_dir, showWarnings = FALSE)
-  }
   yaml::write_yaml(list(cran_urls = c('https://cran.rstudio.com/'),
                         drat_repos = c('eddelbuettel')),
                    file = clir_yml)
@@ -28,7 +29,7 @@ load_repos <- function(clir_yml, quiet = FALSE) {
   return(c(CLAN = cran, repos[names(repos) != 'CRAN']))
 }
 
-print_config <- function(clir_yml, r_lib = .libPaths(), initialize = FALSE) {
+print_config <- function(clir_yml, r_lib = .libPaths()[1], initialize = FALSE) {
   if (initialize) {
     initilize_config(clir_yml = clir_yml)
   }
@@ -51,7 +52,7 @@ print_cran_mirrors <- function(https = TRUE) {
   }
 }
 
-install_pkgs <- function(pkgs, repos, devt, r_lib = .libPaths(),
+install_pkgs <- function(pkgs, repos, devt, r_lib = .libPaths()[1],
                          upgrade = TRUE, depend = TRUE, quiet = FALSE) {
   installed_pkgs <- installed.packages(lib.loc = r_lib)[, 1]
   ps <- list(all = pkgs,
