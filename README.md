@@ -5,8 +5,10 @@ R package manager for command line interface
 
 [![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/m "wercker status")](https://app.wercker.com/project/bykey/e04414d822f906b0704855f5c2d600bf)
 
-Installation
-------------
+Setup
+-----
+
+#### Installation
 
 1.  Install R and the additional packages.
 
@@ -31,7 +33,7 @@ Installation
     $ curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh | bash
     ```
 
-    `install.sh` clones clir into `~/.clir/` and installs the following R packages:
+    `install.sh` clones clir into `~/.clir` and installs the following R packages:
 
     - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
     - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
@@ -40,7 +42,7 @@ Installation
 
     clir depends on docopt and yaml, and uses devtools and drat additionally if they are available.
 
-3.  Add `~/.clir/bin` to `${PATH}` and add `~/.clir/r/library` to `${R_LIBS}` or `${R_LIBS_USER}`.
+3.  Set `~/.clir/bin` into `${PATH}` and set `~/.clir/r/library` into `${R_LIBS_USER}` or `${R_LIBS}`.
 
     ```sh
     $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
@@ -50,8 +52,7 @@ Installation
 
     If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
-Update
-------
+#### Update
 
 Update clir and the dependencies
 
@@ -66,10 +67,27 @@ $ cd ~/.clir
 $ git pull
 ```
 
+#### Configuration
+
+- Library path
+
+  R packages are installed into a directory in `${R_LIBS_USER}` nor `${R_LIBS}`.
+  If neither of them is set, a default library path is used.
+  The default path can be checked as follows:
+
+  ```sh
+  $ R -q --slave -e '.libPaths()[1]'
+  ```
+
+- CRAN and Drat repositories
+
+  clir saves URLs of CRAN mirrors and Drat repositories into `~/.clir/r/clir.yml` as a YAML file.
+
 Usage
 -----
 
 ```sh
+$ clir --help
 R package manager for command line interface
 
 Usage:
@@ -117,7 +135,11 @@ Example
 Install or update R packages via CRAN
 
 ```sh
+# Using install.packages()
 $ clir install dplyr tidyr ggplot2
+
+# Using devtools::install_cran()
+$ clir install --devt=cran dplyr tidyr ggplot2
 ```
 
 Validate loading of installed R packages
