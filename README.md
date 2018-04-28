@@ -50,6 +50,22 @@ Installation
 
     If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
+Update
+------
+
+Update clir and the dependencies
+
+```sh
+$ ~/.clir/install.sh
+```
+
+Update only clir
+
+```sh
+$ cd ~/.clir
+$ git pull
+```
+
 Usage
 -----
 
@@ -98,7 +114,14 @@ Arguments:
 Example
 -------
 
+Install or update R packages via CRAN
+
 ```sh
-$ clir install dplyr tidyr ggplot2    # Install or update R packages via CRAN
-$ clir validate dplyr tidyr ggplot2   # Test loading of installed R packages
+$ clir install dplyr tidyr ggplot2
+```
+
+Validate loading of installed R packages
+
+```sh
+$ clir validate dplyr tidyr ggplot2
 ```
