@@ -8,7 +8,7 @@ build:
         name: Prepare required packages
         code: |
           apt-get -y update
-          apt-get -y install r-base libcurl4-gnutls-dev libssl-dev git
+          apt-get -y install r-base git libcurl4-gnutls-dev libssl-dev
     - script:
         name: Install clir
         code: |
@@ -17,33 +17,40 @@ build:
     - script:
         name: Set environment variables
         code: |
-          chsh -s /bin/bash root
-          echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bashrc
-          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bashrc
-          source ~/.bashrc
-          clir --version
+          echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
+          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
+          source ~/.bash_profile
     - script:
         name: Test configuration
         code: |
+          set -x
+          clir --version
           clir config
           clir cran --list
           clir cran https://cran.ism.ac.jp/
           clir drat dmlc
           clir config
           clir config --init
+          set +x
     - script:
         name: Test installation
         code: |
+          set -x
           clir update
           clir install foreach doSNOW
           clir validate foreach doSNOW
           clir session foreach doSNOW
+          set +x
     - script:
         name: Test uninstallation
         code: |
+          set -x
           clir uninstall foreach doSNOW
-          clir validate foreach doSNOW || :
-          clir session foreach doSNOW || :
+          for p in 'foreach' 'doSNOW'; do
+            [[ ! -d "${HOME}/.clir/r/library/${p}" ]] \
+              && echo "${p} is uninstalled."
+          done
+          set +x
   after-steps:
     - slack-notifier:
         url: $SLACK_URL

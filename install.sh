@@ -64,11 +64,11 @@ echo '
 To access the utility, set environment variables as follows:
 
   # Add clir/bin to ${PATH}
-  $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bashrc
+  $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
 
   # Add clir/r/library to ${R_LIBS_USER}
-  $ echo "export R_LIBS_USER=${HOME}/.clir/r/library" >> ~/.bashrc
+  $ echo "export R_LIBS_USER=${HOME}/.clir/r/library" >> ~/.bash_profile
 
-If you use Zsh, modify `~/.zshrc` instead of `~/.bashrc`.
+If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
 For more information, see https://github.com/dceoy/clir'
