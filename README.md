@@ -19,6 +19,10 @@ Installation
 
     # Fedora
     $ sudo dnf -y install R-devel libcurl-devel openssl-devel git
+
+    # macOS with Homebrew
+    $ brew tap homebrew/science
+    $ brew install r curl openssl git
     ```
 
 2.  Run `install.sh`.
