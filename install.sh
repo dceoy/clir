@@ -43,12 +43,13 @@ fi
 echo
 
 echo '>>> Install dependencies'
+mkdir -p "${R_LIBS_USER}"
 export R_LIBS_USER
 echo "
 options(repos = c(CRAN = '${CRAN_URL}'));
 deps <- c('docopt', 'yaml', 'devtools', 'drat');
-if (! require('devtools')) install.packages(pkgs = 'devtools', dependencies = TRUE);
-devtools::install_cran(deps, dependencies = TRUE);
+if (! require('devtools')) install.packages(pkgs = 'devtools', lib = '${R_LIBS_USER}', dependencies = TRUE);
+withr::with_libpaths('${R_LIBS_USER}', devtools::install_cran(deps, dependencies = TRUE));
 sapply(deps, library, character.only = TRUE);
 " | ${R} -q || abort 'Package installation faild.'
 echo
