@@ -104,14 +104,15 @@ validate_loading <- function(pkgs, quiet = FALSE) {
     if (require('devtools', quietly = TRUE)) {
       print(devtools::session_info(pkgs = pkgs, include_base = TRUE))
     }
-    cat('\nLoading test ', stringr::str_c(rep('-', 67), collapse = ''), '\n')
+    cat('\nLoading test ', stringr::str_c(rep('-', 67), collapse = ''), '\n',
+        sep = '')
     if (length(result$succeeded) > 0) {
-      cat(' Succeeded:\n  ',
-          stringr::str_c(result$succeeded, collapse = '\n   '), '\n')
+      cat(' Succeeded:\n  - ', stringr::str_c(result$succeeded, collapse = '\n  - '), '\n',
+          sep = '')
     }
     if (length(result$failed) > 0) {
-      cat(' Failed:\n  ',
-          stringr::str_c(result$failed, collapse = '\n   '), '\n')
+      cat(' Failed:\n  - ', stringr::str_c(result$failed, collapse = '\n  - '), '\n',
+          sep = '')
     }
     cat('\n')
     if (length(result$failed) == 0) {
