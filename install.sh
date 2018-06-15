@@ -15,13 +15,7 @@ set -e
 # shellcheck disable=SC2086
 SCRIPT_PATH="$(dirname ${0})/$(basename ${0})"
 
-if [[ "${1}" = '--debug' ]]; then
-  set -x
-  R="R --verbose --vanilla"
-  shift 1
-else
-  R="R --vanilla --slave"
-fi
+[[ "${1}" = '--debug' ]] && set -x && shift 1
 
 function print_usage {
   sed -ne '1,2d; /^#/!q; s/^#$/# /; s/^# //p;' "${SCRIPT_PATH}"
@@ -49,10 +43,12 @@ while [[ -n "${1}" ]]; do
     '--root' )
       SYSTEM_INSTALL=1
       CLIR_ROOT='/usr/local/src/clir'
-      R_LIB='.libPaths()[1]'
+      R_LIB=''
+      shift 1
       ;;
     '--cran-url' )
-      CRAN_URL="${2}" && shift 2
+      CRAN_URL="${2}"
+      shift 2
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -76,27 +72,36 @@ if [[ -d "${CLIR_ROOT}" ]]; then
 else
   git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
 fi
-[[ ${SYSTEM_INSTALL} -eq 1 ]] && ln -s /usr/local/src/clir/bin/clir /usr/local/bin/clir
 echo
 
 echo '>>> Install dependencies'
-[[ ${SYSTEM_INSTALL} -eq 0 ]] && [[ ! -d "${R_LIB}" ]] && mkdir -p "${R_LIB}"
-echo "\
-options(repos = c(CRAN = '${CRAN_URL}'));
-deps <- c('docopt', 'yaml', 'devtools', 'drat');
-if (! require('devtools')) install.packages(pkgs = 'devtools', lib = '${R_LIB}', dependencies = TRUE);
-withr::with_libpaths('${R_LIB}', devtools::install_cran(deps, dependencies = TRUE));
-sapply(deps, library, character.only = TRUE);" \
-  | ${R} -q || abort 'Package installation faild.'
+if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
+  [[ -d "${R_LIB}" ]] || mkdir -p "${R_LIB}"
+  PREPROC_R="\
+    options(repos = c(CRAN = '${CRAN_URL}')); \
+    deps <- c('docopt', 'yaml', 'devtools', 'drat'); \
+    if (! require('devtools')) install.packages(pkgs = 'devtools', lib = '${R_LIB}', dependencies = TRUE); \
+    withr::with_libpaths('${R_LIB}', devtools::install_cran(deps, dependencies = TRUE)); \
+    sapply(deps, library, character.only = TRUE);"
+else
+  ln -sf /usr/local/src/clir/src/clir.R /usr/local/bin/clir
+  PREPROC_R="\
+    options(repos = c(CRAN = '${CRAN_URL}')); \
+    deps <- c('docopt', 'yaml', 'devtools', 'drat'); \
+    if (! require('devtools')) install.packages(pkgs = 'devtools', dependencies = TRUE); \
+    devtools::install_cran(deps, dependencies = TRUE); \
+    sapply(deps, library, character.only = TRUE);"
+fi
+echo "${PREPROC_R}" | R --vanilla --slave || abort 'Package installation failed.'
 echo
 
 echo '>>> Validate installed packages'
 ${CLIR_ROOT}/bin/clir validate devtools docopt drat yaml
+echo
 
+echo '>>> Done.'
 # shellcheck disable=SC2016
-echo '
->>> Done.
-
+[[ ${SYSTEM_INSTALL} -eq 0 ]] || echo '
 
 To access the utility, set environment variables as follows:
 
