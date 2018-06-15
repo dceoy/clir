@@ -45,9 +45,19 @@ clir_version <- 'v1.0.2'
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
   fa <- ca[grepl('^--file=', ca)]
-  return(dirname(normalizePath(ifelse(length(fa) == 1,
-                                      dirname(sub('--file=', '', fa)),
-                                      getwd()))))
+  if (length(fa) == 1) {
+    f <- sub('--file=', '', fa)
+    l <- Sys.readlink(f)
+    if (l == '') {
+      return(dirname(dirname(normalizePath(f))))
+    } else if (startsWith(l, '/')) {
+      return(dirname(dirname(normalizePath(l))))
+    } else {
+      return(dirname(dirname(normalizePath(paste0(dirname(f), '/', l)))))
+    }
+  } else {
+    return(normalizePath(getwd()))
+  }
 }
 
 main <- function(opts, clir_root_dir = fetch_clir_root(),
