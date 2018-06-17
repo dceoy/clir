@@ -51,6 +51,13 @@ build:
               && echo "${p} is uninstalled."
           done
           set +x
+    - script:
+        name: Test downloading
+        code: |
+          set -x
+          clir download tidyverse gridExtra
+          ls -l tidyverse* gridExtra*
+          set +x
   after-steps:
     - slack-notifier:
         url: $SLACK_URL
