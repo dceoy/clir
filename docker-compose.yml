@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  clir:
+    container_name: clir
+    build:
+      context: .
+    image: dceoy/clir:latest
+    user: ${UID}:${GID}
+    volumes:
+      - ${PWD}:/wd
+    working_dir: /wd
