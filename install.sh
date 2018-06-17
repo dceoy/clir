@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage:  install.sh [ --root ] [ --cran-url <mirror> ]
+# Usage:  install.sh [ --root ] [ --cran <url> ]
 #         install.sh [ -h | --help ]
 #
 # Description:
@@ -8,6 +8,7 @@
 #
 # Options:
 #   --root        Install clir with root
+#   --cran <url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   -h, --help    Print usage
 
 set -e
@@ -46,7 +47,7 @@ while [[ -n "${1}" ]]; do
       R_LIB=''
       shift 1
       ;;
-    '--cran-url' )
+    '--cran' )
       CRAN_URL="${2}"
       shift 2
       ;;
