@@ -8,7 +8,8 @@ Usage:
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
     clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
-    clir uninstall [--debug] <pkg>...
+    clir download [--debug] [--quiet] [--dest-dir=<path>] <pkg>...
+    clir uninstall [--debug] [--quiet] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
     clir -h|--help
@@ -18,10 +19,11 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
+    --quiet             Suppress messages
+    --no-upgrade        Skip upgrade of old R packages
     --devt=<type>       Install R packages using `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
-    --no-upgrade        Skip upgrade of old R packages
-    --quiet             Suppress messages
+    --dest-dir=<path>   Set a destination directory [default: .]
     -h, --help          Print help and exit
     -v, --version       Print version and exit
 
@@ -40,7 +42,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.2'
+clir_version <- 'v1.0.3'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -94,6 +96,9 @@ main <- function(opts, clir_root_dir = fetch_clir_root(),
     install_pkgs(pkgs = opts[['<pkg>']], repos = repos, r_lib = r_lib,
                  devt = opts[['--devt']], upgrade = (! opts[['--no-upgrade']]),
                  quiet = opts[['--quiet']])
+  } else if (opts[['download']]) {
+    download.packages(pkgs = opts[['<pkg>']], destdir = opts[['--dest-dir']],
+                      repos = repos, type = 'source')
   } else if (opts[['uninstall']]) {
     remove.packages(pkgs = opts[['<pkg>']], lib = r_lib)
   } else if (opts[['validate']]) {
