@@ -78,25 +78,33 @@ echo
 echo '>>> Install dependencies'
 if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
   [[ -d "${R_LIB}" ]] || mkdir -p "${R_LIB}"
+  export R_LIBS_USER="${R_LIB}"
   PREPROC_R="\
     options(repos = c(CRAN = '${CRAN_URL}')); \
-    deps <- c('docopt', 'yaml', 'devtools', 'drat'); \
-    if (! require('devtools')) install.packages(pkgs = 'devtools', lib = '${R_LIB}', dependencies = TRUE); \
-    withr::with_libpaths('${R_LIB}', devtools::install_cran(deps, dependencies = TRUE)); \
-    sapply(deps, library, character.only = TRUE);"
+    sapply(c('docopt', 'yaml', 'devtools', 'drat'), \
+           function(p) { \
+             if (! require(p, character.only = TRUE)) { \
+               install.packages(pkgs = p, lib = '${R_LIB}', dependencies = TRUE); \
+             }; \
+             library(p, character.only = TRUE); \
+           });"
 else
   ln -sf /usr/local/src/clir/src/clir.R /usr/local/bin/clir
   PREPROC_R="\
     options(repos = c(CRAN = '${CRAN_URL}')); \
-    deps <- c('docopt', 'yaml', 'devtools', 'drat'); \
-    if (! require('devtools')) install.packages(pkgs = 'devtools', dependencies = TRUE); \
-    devtools::install_cran(deps, dependencies = TRUE); \
-    sapply(deps, library, character.only = TRUE);"
+    sapply(c('docopt', 'yaml', 'devtools', 'drat'), \
+           function(p) { \
+             if (! require(p, character.only = TRUE)) { \
+               install.packages(pkgs = p, dependencies = TRUE); \
+             }; \
+             library(p, character.only = TRUE); \
+           });"
 fi
 echo "${PREPROC_R}" | R --vanilla --slave || abort 'Package installation failed.'
 echo
 
 echo '>>> Validate installed packages'
+${CLIR_ROOT}/bin/clir update
 ${CLIR_ROOT}/bin/clir validate devtools docopt drat yaml
 echo
 
