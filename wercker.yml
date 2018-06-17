@@ -8,7 +8,7 @@ build:
         name: Prepare required packages
         code: |
           apt-get -y update
-          apt-get -y install r-base git libcurl4-gnutls-dev libssl-dev libxml2-dev
+          apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
     - script:
         name: Install clir
         code: |

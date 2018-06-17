@@ -14,17 +14,17 @@ Setup
 
     ```sh
     # Ubuntu
-    $ sudo apt-get -y install r-base libcurl4-gnutls-dev libssl-dev git
+    $ sudo apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
 
     # CentOS
-    $ sudo yum -y install R-devel libcurl-devel openssl-devel git
+    $ sudo yum -y install git libcurl-devel libxml2-devel openssl-devel R-devel
 
     # Fedora
-    $ sudo dnf -y install R-devel libcurl-devel openssl-devel git
+    $ sudo dnf -y install git libcurl-devel libxml2-devel openssl-devel R-devel
 
     # macOS with Homebrew
     $ brew tap homebrew/science
-    $ brew install r curl openssl git
+    $ brew install curl git openssl r
     ```
 
 2.  Run `install.sh`.
@@ -96,7 +96,8 @@ Usage:
     clir drat [--debug] <repo>...
     clir update [--debug] [--quiet]
     clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
-    clir uninstall [--debug] <pkg>...
+    clir download [--debug] [--quiet] [--dest-dir=<path>] <pkg>...
+    clir uninstall [--debug] [--quiet] <pkg>...
     clir validate [--debug] [--quiet] <pkg>...
     clir session [--debug] [<pkg>...]
     clir -h|--help
@@ -106,10 +107,11 @@ Options:
     --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
+    --quiet             Suppress messages
+    --no-upgrade        Skip upgrade of old R packages
     --devt=<type>       Install R packages using `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
-    --no-upgrade        Skip upgrade of old R packages
-    --quiet             Suppress messages
+    --dest-dir=<path>   Set a destination directory [default: .]
     -h, --help          Print help and exit
     -v, --version       Print version and exit
 
