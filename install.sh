@@ -36,7 +36,6 @@ function abort {
 
 SYSTEM_INSTALL=0
 CLIR_ROOT="${HOME}/.clir"
-R_LIB="${CLIR_ROOT}/r/library"
 CRAN_URL='https://cloud.r-project.org/'
 
 while [[ -n "${1}" ]]; do
@@ -44,7 +43,6 @@ while [[ -n "${1}" ]]; do
     '--root' )
       SYSTEM_INSTALL=1
       CLIR_ROOT='/usr/local/src/clir'
-      R_LIB=''
       shift 1
       ;;
     '--cran' )
@@ -77,14 +75,23 @@ echo
 
 echo '>>> Install dependencies'
 if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
-  [[ -d "${R_LIB}" ]] || mkdir -p "${R_LIB}"
-  export R_LIBS_USER="${R_LIB}"
+  if [[ -n "${R_LIBS_USER}" ]]; then
+    export R_LIBS_USER
+    LIB="${R_LIBS_USER}"
+  elif [[ -n "${R_LIBS}" ]]; then
+    export R_LIBS
+    LIB="${R_LIBS}"
+  else
+    export R_LIBS_USER="${CLIR_ROOT}/r/library"
+    LIB="${R_LIBS_USER}"
+  fi
+  [[ -d "${LIB}" ]] || mkdir -p "${LIB}"
   PREPROC_R="\
     options(repos = c(CRAN = '${CRAN_URL}')); \
     sapply(c('docopt', 'yaml', 'devtools', 'drat'), \
            function(p) { \
              if (! require(p, character.only = TRUE)) { \
-               install.packages(pkgs = p, lib = '${R_LIB}', dependencies = TRUE); \
+               install.packages(pkgs = p, lib = '${LIB}', dependencies = TRUE); \
              }; \
              library(p, character.only = TRUE); \
            });"
@@ -110,14 +117,14 @@ echo
 
 echo '>>> Done.'
 # shellcheck disable=SC2016
-[[ ${SYSTEM_INSTALL} -eq 0 ]] || echo '
+[[ ${SYSTEM_INSTALL} -eq 0 ]] && echo '
 
 To access the utility, set environment variables as follows:
 
   # Add clir/bin to ${PATH}
   $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
 
-  # Add clir/r/library to ${R_LIBS_USER}
+  # Add your R library path to ${R_LIBS_USER}
   $ echo "export R_LIBS_USER=${HOME}/.clir/r/library" >> ~/.bash_profile
 
 If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
