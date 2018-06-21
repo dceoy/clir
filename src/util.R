@@ -29,7 +29,8 @@ load_repos <- function(clir_yml, quiet = FALSE) {
   return(c(CLAN = cran, repos[names(repos) != 'CRAN']))
 }
 
-print_config <- function(clir_yml, r_lib = .libPaths()[1], initialize = FALSE) {
+print_config <- function(clir_yml, r_lib = .libPaths()[1],
+                         initialize = FALSE) {
   if (initialize) {
     initilize_config(clir_yml = clir_yml)
   }
@@ -49,6 +50,17 @@ print_cran_mirrors <- function(https = TRUE) {
     print(subset(d, grepl('^https://', d$URL))[, c('Name', 'URL')])
   } else {
     print(d[, c('Name', 'URL')])
+  }
+}
+
+update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
+                        quiet = FALSE) {
+  if (bioc) {
+    source('https://bioconductor.org/biocLite.R')
+    biocLite()  # nolint
+  } else {
+    update.packages(lib.loc = r_lib, repos = repos, checkbuilt = TRUE,
+                    ask = FALSE, quiet = quiet)
   }
 }
 
@@ -107,11 +119,13 @@ validate_loading <- function(pkgs, quiet = FALSE) {
     cat('\nLoading test ', stringr::str_c(rep('-', 67), collapse = ''), '\n',
         sep = '')
     if (length(result$succeeded) > 0) {
-      cat(' Succeeded:\n  - ', stringr::str_c(result$succeeded, collapse = '\n  - '), '\n',
+      cat(' Succeeded:\n  - ',
+          stringr::str_c(result$succeeded, collapse = '\n  - '), '\n',
           sep = '')
     }
     if (length(result$failed) > 0) {
-      cat(' Failed:\n  - ', stringr::str_c(result$failed, collapse = '\n  - '), '\n',
+      cat(' Failed:\n  - ',
+          stringr::str_c(result$failed, collapse = '\n  - '), '\n',
           sep = '')
     }
     cat('\n')

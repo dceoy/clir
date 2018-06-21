@@ -94,7 +94,7 @@ Usage:
     clir config [--debug] [--init]
     clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
-    clir update [--debug] [--quiet]
+    clir update [--debug] [--quiet] [--bioc]
     clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
     clir download [--debug] [--quiet] [--dest-dir=<path>] <pkg>...
     clir uninstall [--debug] [--quiet] <pkg>...
@@ -108,6 +108,7 @@ Options:
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
     --quiet             Suppress messages
+    --bioc              Update installed Bioconductor packages
     --no-upgrade        Skip upgrade of old R packages
     --devt=<type>       Install R packages using `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
@@ -119,7 +120,7 @@ Commands:
     config              Print configurations for clir
     cran                Set URLs of CRAN mirror sites
     drat                Set Drat repositories
-    update              Update R packages installed via CRAN
+    update              Update installed R packages via CRAN
     install             Install or update R packages
     uninstall           Uninstall R packages
     validate            Load R packages to validate their installation

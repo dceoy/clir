@@ -6,7 +6,7 @@ Usage:
     clir config [--debug] [--init]
     clir cran [--debug] [--list] [<url>...]
     clir drat [--debug] <repo>...
-    clir update [--debug] [--quiet]
+    clir update [--debug] [--quiet] [--bioc]
     clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
     clir download [--debug] [--quiet] [--dest-dir=<path>] <pkg>...
     clir uninstall [--debug] [--quiet] <pkg>...
@@ -20,6 +20,7 @@ Options:
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
     --quiet             Suppress messages
+    --bioc              Update installed Bioconductor packages
     --no-upgrade        Skip upgrade of old R packages
     --devt=<type>       Install R packages using `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
@@ -31,7 +32,7 @@ Commands:
     config              Print configurations for clir
     cran                Set URLs of CRAN mirror sites
     drat                Set Drat repositories
-    update              Update R packages installed via CRAN
+    update              Update installed R packages via CRAN
     install             Install or update R packages
     uninstall           Uninstall R packages
     validate            Load R packages to validate their installation
@@ -42,7 +43,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.3'
+clir_version <- 'v1.0.4'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -90,11 +91,12 @@ main <- function(opts, clir_root_dir = fetch_clir_root(),
   } else if (opts[['drat']]) {
     add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (opts[['update']]) {
-    update.packages(lib.loc = r_lib, repos = repos, checkBuilt = TRUE,
-                    ask = FALSE, quiet = opts[['--quiet']])
+    update_pkgs(repos = repos, r_lib = r_lib, bioc = opts[['--bioc']],
+                quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
-    install_pkgs(pkgs = opts[['<pkg>']], repos = repos, r_lib = r_lib,
-                 devt = opts[['--devt']], upgrade = (! opts[['--no-upgrade']]),
+    install_pkgs(pkgs = opts[['<pkg>']], repos = repos,
+                 devt = opts[['--devt']], r_lib = r_lib,
+                 upgrade = (! opts[['--no-upgrade']]),
                  quiet = opts[['--quiet']])
   } else if (opts[['download']]) {
     download.packages(pkgs = opts[['<pkg>']], destdir = opts[['--dest-dir']],
