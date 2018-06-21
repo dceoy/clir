@@ -3,28 +3,28 @@
 'R package manager for command line interface
 
 Usage:
-    clir config [--debug] [--init]
-    clir cran [--debug] [--list] [<url>...]
-    clir drat [--debug] <repo>...
-    clir update [--debug] [--quiet] [--bioc]
-    clir install [--debug] [--quiet] [--no-upgrade] [--devt=<type>] <pkg>...
-    clir download [--debug] [--quiet] [--dest-dir=<path>] <pkg>...
-    clir uninstall [--debug] [--quiet] <pkg>...
-    clir validate [--debug] [--quiet] <pkg>...
-    clir session [--debug] [<pkg>...]
+    clir config [-d] [--init]
+    clir cran [-d] [--list] [<url>...]
+    clir drat [-d] <repo>...
+    clir update [-d] [--quiet] [--bioc]
+    clir install [-d] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
+    clir download [-d] [--quiet] [--dest-dir=<path>] <pkg>...
+    clir uninstall [-d] [--quiet] <pkg>...
+    clir validate [-d] [--quiet] <pkg>...
+    clir session [-d] [<pkg>...]
     clir -h|--help
     clir -v|--version
 
 Options:
-    --debug             Execute a command with debug messages
     --init              Initialize configurations for clir
     --list              List URLs of CRAN mirrors
-    --quiet             Suppress messages
-    --bioc              Update installed Bioconductor packages
-    --no-upgrade        Skip upgrade of old R packages
-    --devt=<type>       Install R packages using `devtools::install_<type>`
+    --devt=<type>       Use `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
+    --bioc              Use `BiocInstaller::biocLite` from Bioconductor
+    --no-upgrade        Skip upgrade of old R packages
     --dest-dir=<path>   Set a destination directory [default: .]
+    --quiet             Suppress messages
+    -d                  Execute a command with debug messages
     -h, --help          Print help and exit
     -v, --version       Print version and exit
 
@@ -65,16 +65,17 @@ fetch_clir_root <- function() {
 
 main <- function(opts, clir_root_dir = fetch_clir_root(),
                  r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = opts[['--debug']])
+  options(warn = 1, verbose = opts[['-d']],
+          BioC_mirror = 'https://bioconductor.org')
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
-                              quietly = (! opts[['--debug']])),
+                              quietly = (! opts[['-d']])),
                  src = source(file.path(clir_root_dir, 'src/util.R')))
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
   repos <- load_repos(clir_yml = clir_yml, quiet = opts[['--quiet']])
-  if (opts[['--debug']]) {
+  if (opts[['-d']]) {
     print(c(loaded, repos = repos))
   }
   if (opts[['config']]) {

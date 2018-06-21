@@ -57,28 +57,35 @@ update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
                         quiet = FALSE) {
   if (bioc) {
     source('https://bioconductor.org/biocLite.R')
-    biocLite()  # nolint
+    biocLite(pkgs = installed.packages(lib.loc = r_lib)[, 1],   # nolint
+             lib.loc = r_lib, lib = r_lib, ask = FALSE)
   } else {
     update.packages(lib.loc = r_lib, repos = repos, checkbuilt = TRUE,
                     ask = FALSE, quiet = quiet)
   }
 }
 
-install_pkgs <- function(pkgs, repos, devt, r_lib = .libPaths()[1],
-                         upgrade = TRUE, depend = TRUE, quiet = FALSE) {
+install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
+                         r_lib = .libPaths()[1], upgrade = TRUE, depend = TRUE,
+                         quiet = FALSE) {
   installed_pkgs <- installed.packages(lib.loc = r_lib)[, 1]
   ps <- list(all = pkgs,
              old = intersect(pkgs, installed_pkgs),
              new = setdiff(pkgs, installed_pkgs))
   if (upgrade || (length(ps$new) > 0)) {
     if (is.null(devt)) {
-      if (upgrade && (length(ps$old) > 0)) {
-        update.packages(instPkgs = ps$old, repos = repos, checkBuilt = TRUE,
-                        ask = FALSE, lib.loc = r_lib, quiet = quiet)
-      }
-      if (length(ps$new) > 0) {
-        install.packages(pkgs = ps$new, repos = repos, lib = r_lib,
-                         dependencies = depend, quiet = quiet)
+      if (bioc) {
+        biocLite(pkgs = ps$all, lib.loc = r_lib, lib = r_lib,   # nolint
+                 ask = FALSE)
+      } else {
+        if (upgrade && (length(ps$old) > 0)) {
+          update.packages(instPkgs = ps$old, repos = repos, checkBuilt = TRUE,
+                          ask = FALSE, lib.loc = r_lib, quiet = quiet)
+        }
+        if (length(ps$new) > 0) {
+          install.packages(pkgs = ps$new, repos = repos, lib = r_lib,
+                           dependencies = depend, quiet = quiet)
+        }
       }
     } else if (devt %in% c('cran', 'github', 'bitbucket', 'bioc')) {
       if (! require('devtools', quietly = TRUE)) {
