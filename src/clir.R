@@ -96,8 +96,8 @@ main <- function(opts, clir_root_dir = fetch_clir_root(),
                 quiet = opts[['--quiet']])
   } else if (opts[['install']]) {
     install_pkgs(pkgs = opts[['<pkg>']], repos = repos,
-                 devt = opts[['--devt']], r_lib = r_lib,
-                 upgrade = (! opts[['--no-upgrade']]),
+                 bioc = opts[['--bioc']], devt = opts[['--devt']],
+                 r_lib = r_lib, upgrade = (! opts[['--no-upgrade']]),
                  quiet = opts[['--quiet']])
   } else if (opts[['download']]) {
     download.packages(pkgs = opts[['<pkg>']], destdir = opts[['--dest-dir']],

@@ -56,7 +56,7 @@ print_cran_mirrors <- function(https = TRUE) {
 update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
                         quiet = FALSE) {
   if (bioc) {
-    source('https://bioconductor.org/biocLite.R')
+    source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R')) # nolint
     biocLite(pkgs = installed.packages(lib.loc = r_lib)[, 1],   # nolint
              lib.loc = r_lib, lib = r_lib, ask = FALSE)
   } else {
@@ -75,6 +75,7 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
   if (upgrade || (length(ps$new) > 0)) {
     if (is.null(devt)) {
       if (bioc) {
+        source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R')) # nolint
         biocLite(pkgs = ps$all, lib.loc = r_lib, lib = r_lib,   # nolint
                  ask = FALSE)
       } else {
