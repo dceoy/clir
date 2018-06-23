@@ -9,11 +9,6 @@ make_clir_dirs <- function(clir_root_dir, exist_ok = TRUE) {
          dir.create, showWarnings = (! exist_ok))
 }
 
-initilize_config <- function(clir_yml, config = default_config) {
-  yaml::write_yaml(config, file = clir_yml)
-  message(stringr::str_c('Initialized: ', clir_yml))
-}
-
 load_repos <- function(clir_yml, config = default_config, quiet = FALSE) {
   if (file.exists(clir_yml)) {
     cf <- yaml::read_yaml(clir_yml)
@@ -34,21 +29,29 @@ load_repos <- function(clir_yml, config = default_config, quiet = FALSE) {
   return(c(CLAN = cran, repos[names(repos) != 'CRAN']))
 }
 
-print_config <- function(clir_yml, r_lib = .libPaths()[1],
+print_config <- function(clir_yml, r_lib = .libPaths()[1], init = FALSE,
                          config = default_config) {
-  if (file.exists(clir_yml)) {
+  if (init) {
+    cf <- config
+    yaml::write_yaml(cf, file = clir_yml)
+    message(stringr::str_c('Initialized: ', clir_yml))
+  } else if (file.exists(clir_yml)) {
     cf <- yaml::read_yaml(clir_yml)
   } else {
     cf <- config
   }
-  print(list(clir = yaml::read_yaml(clir_yml), libpath = r_lib, r = version))
+  print(list(clir = cf, libpath = r_lib, r = version))
 }
 
-add_config <- function(new, key, clir_yml) {
-  cf <- yaml::read_yaml(clir_yml)
-  cf[[key]] <- c(new, setdiff(cf[[key]], new))
+add_config <- function(new, key, clir_yml, config = default_config) {
+  if (file.exists(clir_yml)) {
+    cf <- yaml::read_yaml(clir_yml)
+    cf[[key]] <- c(new, setdiff(cf[[key]], new))
+  } else {
+    cf <- config
+  }
   yaml::write_yaml(cf, file = clir_yml)
-  message(stringr::str_c('Overwrited: ', clir_yml))
+  message(stringr::str_c('Updated: ', clir_yml))
 }
 
 print_cran_mirrors <- function(https = TRUE) {
@@ -62,7 +65,7 @@ print_cran_mirrors <- function(https = TRUE) {
 
 load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
   source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R'))
-  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, repos = repos,
+  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, siteRepos = repos,
            ask = FALSE)
 }
 

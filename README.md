@@ -3,7 +3,7 @@ clir
 
 R package manager for command line interface
 
-[![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/m "wercker status")](https://app.wercker.com/project/bykey/e04414d822f906b0704855f5c2d600bf)
+[![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/s/master "wercker status")](https://app.wercker.com/project/byKey/e04414d822f906b0704855f5c2d600bf)
 
 Setup
 -----
