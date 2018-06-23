@@ -1,28 +1,33 @@
 #!/usr/bin/env Rscript
 
+default_config <- list(cran_urls = c('https://cran.rstudio.com/'),
+                       drat_repos = c('eddelbuettel'),
+                       bioc_url = 'https://bioconductor.org')
+
 make_clir_dirs <- function(clir_root_dir, exist_ok = TRUE) {
   sapply(file.path(clir_root_dir, c('r', 'r/library')),
          dir.create, showWarnings = (! exist_ok))
 }
 
-initilize_config <- function(clir_yml) {
-  yaml::write_yaml(list(cran_urls = c('https://cran.rstudio.com/'),
-                        drat_repos = c('eddelbuettel')),
-                   file = clir_yml)
+initilize_config <- function(clir_yml, config = default_config) {
+  yaml::write_yaml(config, file = clir_yml)
   message(stringr::str_c('Initialized: ', clir_yml))
 }
 
-load_repos <- function(clir_yml, quiet = FALSE) {
-  if (! file.exists(clir_yml)) {
-    initilize_config(clir_yml = clir_yml)
+load_repos <- function(clir_yml, config = default_config, quiet = FALSE) {
+  if (file.exists(clir_yml)) {
+    cf <- yaml::read_yaml(clir_yml)
+  } else {
+    cf <- config['cran_urls']
   }
-  cf <- yaml::read_yaml(clir_yml)
   if (require('drat', quietly = TRUE) && ('drat_repos' %in% names(cf))) {
     drat:::addRepo(account = cf$drat_repos)
   }
   repos <- getOption('repos')
   if ('cran_urls' %in% names(cf)) {
     cran <- cf$cran_urls[1]
+  } else if (repos == "@CRAN@")  {
+    cran <- config['cran_urls'][1]
   } else {
     cran <- repos['CRAN']
   }
@@ -30,9 +35,11 @@ load_repos <- function(clir_yml, quiet = FALSE) {
 }
 
 print_config <- function(clir_yml, r_lib = .libPaths()[1],
-                         initialize = FALSE) {
-  if (initialize) {
-    initilize_config(clir_yml = clir_yml)
+                         config = default_config) {
+  if (file.exists(clir_yml)) {
+    cf <- yaml::read_yaml(clir_yml)
+  } else {
+    cf <- config
   }
   print(list(clir = yaml::read_yaml(clir_yml), libpath = r_lib, r = version))
 }
@@ -54,8 +61,8 @@ print_cran_mirrors <- function(https = TRUE) {
 }
 
 load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
-  source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R'))     # nolint
-  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, repos = repos,  # nolint
+  source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R'))
+  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, repos = repos,
            ask = FALSE)
 }
 
@@ -96,9 +103,7 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
         install.packages(pkgs = 'devtools', repos = repos, lib = r_lib,
                          dependencies = TRUE, quiet = quiet)
       }
-      if (! require('devtools', quietly = TRUE)) {
-        stop('Loading of devtools failed.')
-      } else {
+      if (require('devtools', quietly = TRUE)) {
         if (upgrade) {
           targets <- ps$all
         } else {
@@ -111,6 +116,8 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
                     'bioc' = devtools::install_bioc)
         withr::with_libpaths(r_lib,
                              f(targets, dependencies = depend, quiet = quiet))
+      } else {
+        stop('Loading of devtools failed.')
       }
     } else {
       stop('Invalid installation type.')

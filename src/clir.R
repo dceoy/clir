@@ -32,8 +32,9 @@ Commands:
     config              Print configurations for clir
     cran                Set URLs of CRAN mirror sites
     drat                Set Drat repositories
-    update              Update installed R packages via CRAN
+    update              Update installed R packages via CRAN or Bioconductor
     install             Install or update R packages
+    download            Download R packages from CRAN
     uninstall           Uninstall R packages
     validate            Load R packages to validate their installation
     session             Print session infomation
@@ -43,7 +44,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.4'
+clir_version <- 'v1.0.5'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -65,8 +66,7 @@ fetch_clir_root <- function() {
 
 main <- function(opts, clir_root_dir = fetch_clir_root(),
                  r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = opts[['-d']],
-          BioC_mirror = 'https://bioconductor.org')
+  options(warn = 1, verbose = opts[['-d']])
   loaded <- list(opts = opts,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
@@ -75,12 +75,12 @@ main <- function(opts, clir_root_dir = fetch_clir_root(),
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
   repos <- load_repos(clir_yml = clir_yml, quiet = opts[['--quiet']])
+  options(repos = repos, BioC_mirror = default_config$bioc_url)
   if (opts[['-d']]) {
-    print(c(loaded, repos = repos))
+    print(c(loaded, sapply(c('repos', 'BioC_mirror'), getOption)))
   }
   if (opts[['config']]) {
-    print_config(clir_yml = clir_yml, r_lib = r_lib,
-                 initialize = opts[['--init']])
+    print_config(clir_yml = clir_yml, r_lib = r_lib)
   } else if (opts[['cran']]) {
     if (opts[['--list']]) {
       print_cran_mirrors(https = TRUE)

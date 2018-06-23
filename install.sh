@@ -17,7 +17,13 @@ set -e
 # shellcheck disable=SC2086
 SCRIPT_PATH="$(dirname ${0})/$(basename ${0})"
 
-[[ "${1}" = '--debug' ]] && set -x && shift 1
+if [[ "${1}" = '--debug' ]]; then
+  DEBUG_FLAG='-d'
+  set -x
+  shift 1
+else
+  DEBUG_FLAG=''
+fi
 
 function print_usage {
   sed -ne '1,2d; /^#/!q; s/^#$/# /; s/^# //p;' "${SCRIPT_PATH}"
@@ -119,8 +125,8 @@ EOF
 echo
 
 echo '>>> Validate installed packages'
-${CLIR_ROOT}/bin/clir install --devt=cran devtools docopt drat yaml
-${CLIR_ROOT}/bin/clir validate devtools docopt drat yaml
+${CLIR_ROOT}/bin/clir install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
+${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} devtools docopt drat yaml
 echo
 
 echo '>>> Done.'
