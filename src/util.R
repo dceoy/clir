@@ -77,7 +77,7 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
       if (bioc) {
         source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R')) # nolint
         biocLite(pkgs = ps$all, lib.loc = r_lib, lib = r_lib,   # nolint
-                 ask = FALSE)
+                 repos = repos, ask = FALSE)
       } else {
         if (upgrade && (length(ps$old) > 0)) {
           update.packages(instPkgs = ps$old, repos = repos, checkBuilt = TRUE,
