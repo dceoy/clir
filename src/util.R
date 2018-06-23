@@ -53,12 +53,17 @@ print_cran_mirrors <- function(https = TRUE) {
   }
 }
 
+load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
+  source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R'))     # nolint
+  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, repos = repos,  # nolint
+           ask = FALSE)
+}
+
 update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
                         quiet = FALSE) {
   if (bioc) {
-    source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R')) # nolint
-    biocLite(pkgs = installed.packages(lib.loc = r_lib)[, 1],   # nolint
-             lib.loc = r_lib, lib = r_lib, ask = FALSE)
+    load_n_run_bioclite(pkgs = rownames(installed.packages(lib.loc = r_lib)),
+                        repos = repos, r_lib = r_lib)
   } else {
     update.packages(lib.loc = r_lib, repos = repos, checkbuilt = TRUE,
                     ask = FALSE, quiet = quiet)
@@ -68,16 +73,14 @@ update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
 install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
                          r_lib = .libPaths()[1], upgrade = TRUE, depend = TRUE,
                          quiet = FALSE) {
-  installed_pkgs <- installed.packages(lib.loc = r_lib)[, 1]
+  installed_pkgs <- rownames(installed.packages(lib.loc = r_lib))
   ps <- list(all = pkgs,
              old = intersect(pkgs, installed_pkgs),
              new = setdiff(pkgs, installed_pkgs))
   if (upgrade || (length(ps$new) > 0)) {
     if (is.null(devt)) {
       if (bioc) {
-        source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R')) # nolint
-        biocLite(pkgs = ps$all, lib.loc = r_lib, lib = r_lib,   # nolint
-                 repos = repos, ask = FALSE)
+        load_n_run_bioclite(pkgs = ps$all, repos = repos, r_lib = r_lib)
       } else {
         if (upgrade && (length(ps$old) > 0)) {
           update.packages(instPkgs = ps$old, repos = repos, checkBuilt = TRUE,
