@@ -64,60 +64,60 @@ fetch_clir_root <- function() {
   }
 }
 
-main <- function(opts, clir_root_dir = fetch_clir_root(),
+main <- function(args, clir_root_dir = fetch_clir_root(),
                  r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = opts[['-d']])
-  loaded <- list(opts = opts,
+  options(warn = 1, verbose = args[['-d']])
+  loaded <- list(args = args,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
-                              quietly = (! opts[['-d']])),
+                              quietly = (! args[['-d']])),
                  src = source(file.path(clir_root_dir, 'src/util.R')))
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
-  repos <- load_repos(clir_yml = clir_yml, quiet = opts[['--quiet']])
-  options(repos = repos, BioC_mirror = default_config$bioc_url)
-  if (opts[['-d']]) {
+  repos <- load_repos(clir_yml = clir_yml, quiet = args[['--quiet']])
+  options(repos = repos, BioC_mirror = default_bioc_url)
+  if (args[['-d']]) {
     print(c(loaded, sapply(c('repos', 'BioC_mirror'), getOption)))
   }
-  if (opts[['config']]) {
-    print_config(clir_yml = clir_yml, r_lib = r_lib, init = opts[['--init']])
-  } else if (opts[['cran']]) {
-    if (opts[['--list']]) {
+  if (args[['config']]) {
+    print_config(clir_yml = clir_yml, r_lib = r_lib, init = args[['--init']])
+  } else if (args[['cran']]) {
+    if (args[['--list']]) {
       print_cran_mirrors(https = TRUE)
-    } else if (length(opts[['<url>']]) > 0) {
-      add_config(new = opts[['<url>']], key = 'cran_urls', clir_yml = clir_yml)
+    } else if (length(args[['<url>']]) > 0) {
+      add_config(new = args[['<url>']], key = 'cran_urls', clir_yml = clir_yml)
     } else {
       stop('URLs or --list must be passed for this command.')
     }
-  } else if (opts[['drat']]) {
-    add_config(new = opts[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
-  } else if (opts[['update']]) {
-    update_pkgs(repos = repos, r_lib = r_lib, bioc = opts[['--bioc']],
-                quiet = opts[['--quiet']])
-  } else if (opts[['install']]) {
-    install_pkgs(pkgs = opts[['<pkg>']], repos = repos,
-                 bioc = opts[['--bioc']], devt = opts[['--devt']],
-                 r_lib = r_lib, upgrade = (! opts[['--no-upgrade']]),
-                 quiet = opts[['--quiet']])
-  } else if (opts[['download']]) {
-    download.packages(pkgs = opts[['<pkg>']], destdir = opts[['--dest-dir']],
+  } else if (args[['drat']]) {
+    add_config(new = args[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
+  } else if (args[['update']]) {
+    update_pkgs(repos = repos, r_lib = r_lib, bioc = args[['--bioc']],
+                quiet = args[['--quiet']])
+  } else if (args[['install']]) {
+    install_pkgs(pkgs = args[['<pkg>']], repos = repos,
+                 bioc = args[['--bioc']], devt = args[['--devt']],
+                 r_lib = r_lib, upgrade = (! args[['--no-upgrade']]),
+                 quiet = args[['--quiet']])
+  } else if (args[['download']]) {
+    download.packages(pkgs = args[['<pkg>']], destdir = args[['--dest-dir']],
                       repos = repos, type = 'source')
-  } else if (opts[['uninstall']]) {
-    remove.packages(pkgs = opts[['<pkg>']], lib = r_lib)
-  } else if (opts[['validate']]) {
-    validate_loading(pkgs = opts[['<pkg>']], quiet = opts[['--quiet']])
-  } else if (opts[['session']]) {
-    print_sessions(pkgs = opts[['<pkg>']])
+  } else if (args[['uninstall']]) {
+    remove.packages(pkgs = args[['<pkg>']], lib = r_lib)
+  } else if (args[['validate']]) {
+    validate_loading(pkgs = args[['<pkg>']], quiet = args[['--quiet']])
+  } else if (args[['session']]) {
+    print_sessions(pkgs = args[['<pkg>']])
   } else {
     stop('invalid subcommand')
   }
 }
 
 if (! interactive()) {
-  opts <- docopt::docopt(doc, version = clir_version)
-  if (opts[['--quiet']]) {
-    suppressMessages(main(opts = opts))
+  args <- docopt::docopt(doc, version = clir_version)
+  if (args[['--quiet']]) {
+    suppressMessages(main(args = args))
   } else {
-    main(opts = opts)
+    main(args = args)
   }
 }

@@ -1,19 +1,19 @@
 #!/usr/bin/env Rscript
 
 default_config <- list(cran_urls = c('https://cran.rstudio.com/'),
-                       drat_repos = c('eddelbuettel'),
-                       bioc_url = 'https://bioconductor.org')
+                       drat_repos = c('eddelbuettel'))
+default_bioc_url <- 'https://bioconductor.org'
 
 make_clir_dirs <- function(clir_root_dir, exist_ok = TRUE) {
   sapply(file.path(clir_root_dir, c('r', 'r/library')),
          dir.create, showWarnings = (! exist_ok))
 }
 
-load_repos <- function(clir_yml, config = default_config, quiet = FALSE) {
+load_repos <- function(clir_yml, quiet = FALSE) {
   if (file.exists(clir_yml)) {
     cf <- yaml::read_yaml(clir_yml)
   } else {
-    cf <- config['cran_urls']
+    cf <- default_config$cran_urls
   }
   if (require('drat', quietly = TRUE) && ('drat_repos' %in% names(cf))) {
     drat:::addRepo(account = cf$drat_repos)
@@ -22,33 +22,32 @@ load_repos <- function(clir_yml, config = default_config, quiet = FALSE) {
   if ('cran_urls' %in% names(cf)) {
     cran <- cf$cran_urls[1]
   } else if (repos == "@CRAN@")  {
-    cran <- config['cran_urls'][1]
+    cran <- default_config$cran_urls[1]
   } else {
     cran <- repos['CRAN']
   }
   return(c(CLAN = cran, repos[names(repos) != 'CRAN']))
 }
 
-print_config <- function(clir_yml, r_lib = .libPaths()[1], init = FALSE,
-                         config = default_config) {
+print_config <- function(clir_yml, r_lib = .libPaths()[1], init = FALSE) {
   if (init) {
-    cf <- config
+    cf <- default_config
     yaml::write_yaml(cf, file = clir_yml)
     message(stringr::str_c('Initialized: ', clir_yml))
   } else if (file.exists(clir_yml)) {
     cf <- yaml::read_yaml(clir_yml)
   } else {
-    cf <- config
+    cf <- default_config
   }
   print(list(clir = cf, libpath = r_lib, r = version))
 }
 
-add_config <- function(new, key, clir_yml, config = default_config) {
+add_config <- function(new, key, clir_yml) {
   if (file.exists(clir_yml)) {
     cf <- yaml::read_yaml(clir_yml)
     cf[[key]] <- c(new, setdiff(cf[[key]], new))
   } else {
-    cf <- config
+    cf <- default_config
   }
   yaml::write_yaml(cf, file = clir_yml)
   message(stringr::str_c('Updated: ', clir_yml))
