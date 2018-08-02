@@ -94,11 +94,15 @@ echo
 echo '>>> Check out clir from GitHub'
 if [[ ! -d "${CLIR_ROOT}" ]]; then
   git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
-elif [[ ${REINSTALL} -eq 0 ]]; then
-  git --git-dir="${CLIR_ROOT}/.git" pull origin master
 else
-  git --git-dir="${CLIR_ROOT}/.git" fetch
-  git --git-dir="${CLIR_ROOT}/.git" reset --hard origin/master
+  cwd="${PWD}" && cd "${CLIR_ROOT}"
+  if [[ ${REINSTALL} -eq 0 ]]; then
+    git pull origin master
+  else
+    git fetch origin master
+    git reset --hard origin/master
+  fi
+  cd "${cwd}"
 fi
 echo
 
