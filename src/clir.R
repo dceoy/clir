@@ -44,7 +44,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.5'
+clir_version <- 'v1.0.6'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -52,13 +52,14 @@ fetch_clir_root <- function() {
   if (length(fa) == 1) {
     f <- sub('--file=', '', fa)
     l <- Sys.readlink(f)
-    if (l == '') {
-      return(dirname(dirname(normalizePath(f))))
+    if (is.na(l)) {
+      cmd_path <- normalizePath(f)
     } else if (startsWith(l, '/')) {
-      return(dirname(dirname(normalizePath(l))))
+      cmd_path <- normalizePath(l)
     } else {
-      return(dirname(dirname(normalizePath(paste0(dirname(f), '/', l)))))
+      cmd_path <- normalizePath(file.path(dirname(f), l))
     }
+    return(dirname(dirname(cmd_path)))
   } else {
     return(normalizePath(getwd()))
   }

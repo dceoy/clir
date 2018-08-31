@@ -63,7 +63,7 @@ print_cran_mirrors <- function(https = TRUE) {
 }
 
 load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
-  source(stringr::str_c(getOption('BioC_mirror'), '/biocLite.R'))
+  source(file.path(getOption('BioC_mirror'), 'biocLite.R'))
   biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, siteRepos = repos,
            ask = FALSE)
 }
