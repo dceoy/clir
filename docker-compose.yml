@@ -1,3 +1,4 @@
+---
 version: '3'
 
 services:
@@ -10,3 +11,5 @@ services:
     volumes:
       - ${PWD}:/wd
     working_dir: /wd
+    entrypoint:
+      - /usr/local/bin/clir

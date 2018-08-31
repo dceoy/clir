@@ -21,4 +21,4 @@ RUN set -e \
       && bash /tmp/install.sh --root \
       && rm -f /tmp/install.sh
 
-ENTRYPOINT ["/usr/bin/R"]
+ENTRYPOINT ["/usr/local/bin/clir"]

@@ -117,11 +117,7 @@ options(repos = c(CRAN = '${CRAN_URL}'));
 sapply(c('docopt', 'yaml', 'devtools', 'drat'),
        function(p) {
          if ((${REINSTALL} != 0) || (! require(p, character.only = TRUE))) {
-           if (${SYSTEM_INSTALL} == 0) {
-             install.packages(pkgs = p, lib = '${LIB_DIR}', dependencies = TRUE);
-           } else {
-             install.packages(pkgs = p, dependencies = TRUE);
-           };
+           install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE);
          };
          library(p, character.only = TRUE);
        });
@@ -135,7 +131,8 @@ echo
 
 echo '>>> Done.'
 # shellcheck disable=SC2016
-[[ ${SYSTEM_INSTALL} -eq 0 ]] && echo '
+if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
+  echo '
 
 To access the utility, set environment variables as follows:
 
@@ -148,3 +145,4 @@ To access the utility, set environment variables as follows:
 If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
 For more information, see https://github.com/dceoy/clir'
+fi
