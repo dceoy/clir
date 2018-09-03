@@ -61,7 +61,7 @@ fetch_clir_root <- function() {
     }
     return(dirname(dirname(cmd_path)))
   } else {
-    return(normalizePath(getwd()))
+    return(getwd())
   }
 }
 
