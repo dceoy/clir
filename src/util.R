@@ -74,8 +74,7 @@ update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
     load_n_run_bioclite(pkgs = rownames(installed.packages(lib.loc = r_lib)),
                         repos = repos, r_lib = r_lib)
   } else {
-    update.packages(lib.loc = r_lib, repos = repos, checkbuilt = TRUE,
-                    ask = FALSE, quiet = quiet)
+    update.packages(lib.loc = r_lib, repos = repos, ask = FALSE, quiet = quiet)
   }
 }
 
@@ -92,8 +91,8 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
         load_n_run_bioclite(pkgs = ps$all, repos = repos, r_lib = r_lib)
       } else {
         if (upgrade && (length(ps$old) > 0)) {
-          update.packages(instPkgs = ps$old, repos = repos, checkBuilt = TRUE,
-                          ask = FALSE, lib.loc = r_lib, quiet = quiet)
+          update.packages(instPkgs = ps$old, repos = repos, ask = FALSE,
+                          lib.loc = r_lib, quiet = quiet)
         }
         if (length(ps$new) > 0) {
           install.packages(pkgs = ps$new, repos = repos, lib = r_lib,
