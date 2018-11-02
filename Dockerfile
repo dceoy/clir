@@ -11,7 +11,8 @@ RUN set -e \
       && apt-get -y update \
       && apt-get -y dist-upgrade \
       && apt-get -y install --no-install-recommends --no-install-suggests \
-        g++ gcc git make libcurl4-gnutls-dev libssl-dev libxml2-dev r-base \
+        g++ gcc gfortran git make libblas-dev libcurl4-gnutls-dev \
+        liblapack-dev libssl-dev libxml2-dev r-base \
       && apt-get -y autoremove \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
