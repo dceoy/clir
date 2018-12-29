@@ -8,7 +8,7 @@
 #
 # Options:
 #   --root        Install clir with root
-#   -f            Force reinstallation
+#   --force       Force reinstallation
 #   --cran <url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   -h, --help    Print usage
 
