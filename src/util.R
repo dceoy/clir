@@ -135,7 +135,7 @@ validate_loading <- function(pkgs, quiet = FALSE) {
     if (require('devtools', quietly = TRUE)) {
       print(devtools::session_info(pkgs = pkgs, include_base = TRUE))
     }
-    cat('\nLoading test ', stringr::str_c(rep('-', 67), collapse = ''), '\n',
+    cat('\n- Loading test ', stringr::str_c(rep('-', 63), collapse = ''), '\n',
         sep = '')
     if (length(result$succeeded) > 0) {
       cat(' Succeeded:\n  - ',
