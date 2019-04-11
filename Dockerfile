@@ -9,9 +9,16 @@ RUN set -e \
 
 RUN set -e \
       && apt-get -y update \
+      && apt-get -y install --no-install-recommends --no-install-suggests \
+        apt-transport-https apt-utils ca-certificates gnupg \
+      && echo "deb https://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" \
+        > /etc/apt/sources.list.d/r.list \
+      && apt-key adv --keyserver keyserver.ubuntu.com \
+        --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+      && apt-get -y update \
       && apt-get -y dist-upgrade \
       && apt-get -y install --no-install-recommends --no-install-suggests \
-        g++ gcc gfortran git make libblas-dev libcurl4-gnutls-dev \
+        curl g++ gcc gfortran git make libblas-dev libcurl4-gnutls-dev \
         liblapack-dev libssl-dev libxml2-dev r-base \
       && apt-get -y autoremove \
       && apt-get clean \
