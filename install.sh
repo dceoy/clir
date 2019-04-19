@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# Usage:  install.sh [ --root ] [ --force ] [ --cran <url> ]
-#         install.sh [ -h | --help ]
+# Usage:
+#   install.sh [--root] [--force] [--cran=<url>]
+#   install.sh -h|--help
 #
 # Description:
 #   Set up `clir`, command-line R package installer
@@ -12,12 +13,11 @@
 #   --cran <url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   -h, --help    Print usage
 
-set -e
+set -ue
 
-# shellcheck disable=SC2086
-SCRIPT_PATH="$(dirname ${0})/$(basename ${0})"
+SCRIPT_PATH=$(realpath "${0}")
 
-if [[ "${1}" = '--debug' ]]; then
+if [[ ${#} -ge 1 ]] && [[ "${1}" = '--debug' ]]; then
   DEBUG_FLAG='-d'
   set -x
   shift 1
@@ -41,19 +41,23 @@ function abort {
   exit 1
 }
 
-while [[ -n "${1}" ]]; do
+SYSTEM_INSTALL=0
+REINSTALL=0
+CRAN_URL='https://cloud.r-project.org/'
+
+while [[ ${#} -ge 1 ]]; do
   case "${1}" in
     '--root' )
-      SYSTEM_INSTALL=1
-      shift 1
+      SYSTEM_INSTALL=1 && shift 1
       ;;
     '--force' )
-      REINSTALL=1
-      shift 1
+      REINSTALL=1 && shift 1
       ;;
     '--cran' )
-      CRAN_URL="${2}"
-      shift 2
+      CRAN_URL="${2}" && shift 2
+      ;;
+    --cran=* )
+      CRAN_URL="${1#*\=}" && shift 1
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -63,10 +67,6 @@ while [[ -n "${1}" ]]; do
       ;;
   esac
 done
-
-[[ -n "${SYSTEM_INSTALL}" ]] || SYSTEM_INSTALL=0
-[[ -n "${REINSTALL}" ]] || REINSTALL=0
-[[ -n "${CRAN_URL}" ]] || CRAN_URL='https://cloud.r-project.org/'
 
 if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
   CLIR_ROOT="${HOME}/.clir"
@@ -83,8 +83,6 @@ if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
 else
   CLIR_ROOT='/usr/local/src/clir'
 fi
-
-set -u
 
 echo '>>> Validate requirements'
 R --version || abort 'R is not found.'
