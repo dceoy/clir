@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD https://raw.githubusercontent.com/dceoy/clir/master/install.sh /tmp/install.sh
+ADD https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh /tmp/install_clir.sh
 
 RUN set -e \
       && ln -sf /bin/bash /bin/sh
@@ -25,7 +25,7 @@ RUN set -e \
       && rm -rf /var/lib/apt/lists/*
 
 RUN set -e \
-      && bash /tmp/install.sh --root \
-      && rm -f /tmp/install.sh
+      && bash /tmp/install_clir.sh --root \
+      && rm -f /tmp/install_clir.sh
 
 ENTRYPOINT ["/usr/local/bin/clir"]
