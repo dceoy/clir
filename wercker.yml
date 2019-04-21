@@ -12,8 +12,9 @@ build:
     - script:
         name: Install clir
         code: |
-          curl https://raw.githubusercontent.com/dceoy/clir/master/install.sh \
-            | bash
+          curl -SO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
+          chmod +x install_clir.sh
+          ./install_clir.sh
     - script:
         name: Set environment variables
         code: |

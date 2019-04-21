@@ -27,14 +27,14 @@ Setup
     $ brew install curl git openssl r
     ```
 
-2.  Check out clir and run `install.sh`.
+2.  Check out clir and run `install_clir.sh`.
 
     ```sh
     $ git clone https://github.com/dceoy/clir.git ~/.clir
-    $ ~/.clir/install.sh
+    $ ~/.clir/install_clir.sh
     ```
 
-    `install.sh` installs the following R packages:
+    `install_clir.sh` installs the following R packages:
 
     - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
     - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
@@ -43,7 +43,7 @@ Setup
 
     clir depends on docopt and yaml, and uses devtools and drat additionally if they are available.
 
-    Run `~/.clir/install.sh --help` for more details of the installer.
+    Run `~/.clir/install_clir.sh --help` for more details of the installer.
 
 3.  Set `~/.clir/bin` into `${PATH}` and set `~/.clir/r/library` into `${R_LIBS_USER}` or `${R_LIBS}`.
 
@@ -60,7 +60,7 @@ Setup
 Update clir and the dependencies
 
 ```sh
-$ ~/.clir/install.sh
+$ ~/.clir/install_clir.sh
 ```
 
 Update only clir
