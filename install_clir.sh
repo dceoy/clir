@@ -32,8 +32,8 @@ function abort {
     if [[ ${#} -eq 0 ]]; then
       cat -
     else
-      # shellcheck disable=SC2086
-      echo "$(basename ${SCRIPT_PATH}): ${*}"
+      SCRIPT_NAME=$(basename "${SCRIPT_PATH}")
+      echo "${SCRIPT_NAME}: ${*}"
     fi
   } >&2
   exit 1
