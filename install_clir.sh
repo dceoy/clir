@@ -98,9 +98,9 @@ if [[ ! -d "${CLIR_ROOT}" ]]; then
 else
   cd "${CLIR_ROOT}" || abort "cd failed: ${CLIR_ROOT}"
   if [[ ${REINSTALL} -eq 0 ]]; then
-    git pull origin master
+    git pull --prune origin master
   else
-    git fetch origin master
+    git fetch --prune origin master
     git reset --hard origin/master
   fi
   cd -
