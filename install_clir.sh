@@ -115,19 +115,20 @@ else
 fi
 cat << EOF | R --vanilla --slave || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
-sapply(c('docopt', 'yaml', 'devtools', 'drat'),
+sapply(c('docopt', 'yaml', 'devtools', 'drat', 'BiocManager'),
        function(p) {
          if ((${REINSTALL} != 0) || (! require(p, character.only = TRUE))) {
            install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE);
          };
          library(p, character.only = TRUE);
        });
+BiocManager::install();
 EOF
 echo
 
 echo '>>> Validate installed packages'
 ${CLIR_ROOT}/bin/clir install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
-${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} devtools docopt drat yaml
+${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
 echo
 
 echo '>>> Done.'

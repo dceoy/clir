@@ -40,8 +40,9 @@ Setup
     - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
     - [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
     - [drat](https://cran.r-project.org/web/packages/drat/index.html)
+    - [BiocManager](https://cran.r-project.org/web/packages/BiocManager/index.html)
 
-    clir depends on docopt and yaml, and uses devtools and drat additionally if they are available.
+    clir depends on docopt and yaml, and uses devtools, drat, and BiocManager additionally if they are available.
 
     Run `~/.clir/install_clir.sh --help` for more details of the installer.
 

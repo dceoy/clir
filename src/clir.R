@@ -20,7 +20,7 @@ Options:
     --list              List URLs of CRAN mirrors
     --devt=<type>       Use `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
-    --bioc              Use `BiocInstaller::biocLite` from Bioconductor
+    --bioc              Use BiocManager::install
     --no-upgrade        Skip upgrade of old R packages
     --dest-dir=<path>   Set a destination directory [default: .]
     --quiet             Suppress messages
@@ -44,7 +44,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.0.8'
+clir_version <- 'v1.1.0'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -76,9 +76,9 @@ main <- function(args, clir_root_dir = fetch_clir_root(),
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
   repos <- load_repos(clir_yml = clir_yml, quiet = args[['--quiet']])
-  options(repos = repos, BioC_mirror = default_bioc_url)
+  options(repos = repos)
   if (args[['-d']]) {
-    print(c(loaded, sapply(c('repos', 'BioC_mirror'), getOption)))
+    print(c(loaded, sapply(c('repos'), getOption)))
   }
   if (args[['config']]) {
     print_config(clir_yml = clir_yml, r_lib = r_lib, init = args[['--init']])

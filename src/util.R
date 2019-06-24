@@ -2,7 +2,6 @@
 
 default_config <- list(cran_urls = c('https://cran.rstudio.com/'),
                        drat_repos = c('eddelbuettel'))
-default_bioc_url <- 'https://bioconductor.org'
 
 make_clir_dirs <- function(clir_root_dir, exist_ok = TRUE) {
   sapply(file.path(clir_root_dir, c('r', 'r/library')),
@@ -63,9 +62,8 @@ print_cran_mirrors <- function(https = TRUE) {
 }
 
 load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
-  source(file.path(getOption('BioC_mirror'), 'biocLite.R'))
-  biocLite(pkgs = pkgs, lib.loc = r_lib, lib = r_lib, siteRepos = repos,
-           ask = FALSE)
+  BiocManager::install(pkgs = pkgs, lib.loc = r_lib, lib = r_lib,
+                       siteRepos = repos, update = TRUE, ask = FALSE)
 }
 
 update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
