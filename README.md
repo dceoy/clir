@@ -5,6 +5,13 @@ R package manager for command line interface
 
 [![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/s/master "wercker status")](https://app.wercker.com/project/byKey/e04414d822f906b0704855f5c2d600bf)
 
+Supported R versions:
+
+- R &ge; 3.5
+  - clir v1.1.0 (latest)
+- R &lt; 3.5
+  - clir v1.0.8
+
 Setup
 -----
 
