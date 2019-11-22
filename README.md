@@ -94,6 +94,15 @@ $ git pull
 
   clir saves URLs of CRAN mirrors and Drat repositories into `~/.clir/r/clir.yml` as a YAML file.
 
+Docker image
+------------
+
+The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
+
+```sh
+$ docker pull dceoy/clir
+```
+
 Usage
 -----
 
