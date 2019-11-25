@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh /tmp/install_clir.sh
+ADD install_clir.sh /tmp/install_clir.sh
 
 RUN set -e \
       && ln -sf /bin/bash /bin/sh
