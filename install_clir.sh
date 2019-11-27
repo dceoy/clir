@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   install_clir.sh [--root] [--force] [--cran=<url>]
+#   install_clir.sh [--root] [-f|--force] [--cran=<url>]
 #   install_clir.sh -h|--help
 #
 # Description:
-#   Set up `clir`, command-line R package installer
+#   Set up `clir` command-line R package installer
 #
 # Options:
 #   --root        Install clir with root
-#   --force       Force reinstallation
+#   -f, --force   Force reinstallation
 #   --cran <url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   -h, --help    Print usage
 
@@ -51,7 +51,7 @@ while [[ ${#} -ge 1 ]]; do
     '--root' )
       SYSTEM_INSTALL=1 && shift 1
       ;;
-    '--force' )
+    '-f' | '--force' )
       REINSTALL=1 && shift 1
       ;;
     '--cran' )
