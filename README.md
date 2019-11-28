@@ -12,6 +12,15 @@ Supported R versions:
 - R &lt; 3.5
   - clir v1.0.8
 
+Docker image
+------------
+
+The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
+
+```sh
+$ docker pull dceoy/clir
+```
+
 Setup
 -----
 
@@ -38,6 +47,11 @@ Setup
 
     ```sh
     $ git clone https://github.com/dceoy/clir.git ~/.clir
+    ```
+
+3.  Install clir and the dependencies.
+
+    ```sh
     $ ~/.clir/install_clir.sh
     ```
 
@@ -53,7 +67,7 @@ Setup
 
     Run `~/.clir/install_clir.sh --help` for more details of the installer.
 
-3.  Set `~/.clir/bin` into `${PATH}` and set `~/.clir/r/library` into `${R_LIBS_USER}` or `${R_LIBS}`.
+4.  Set `~/.clir/bin` into `${PATH}` and set `~/.clir/r/library` into `${R_LIBS_USER}` or `${R_LIBS}`.
 
     ```sh
     $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
@@ -65,13 +79,13 @@ Setup
 
 #### Update
 
-Update clir and the dependencies
+Update clir and the dependencies.
 
 ```sh
 $ ~/.clir/install_clir.sh
 ```
 
-Update only clir
+Update only clir.
 
 ```sh
 $ cd ~/.clir
@@ -94,13 +108,21 @@ $ git pull
 
   clir saves URLs of CRAN mirrors and Drat repositories into `~/.clir/r/clir.yml` as a YAML file.
 
-Docker image
-------------
+#### Installation into a system
 
-The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
+Run the installer with `--root` if you install clir into a system. (clir is going to be installed into `/usr/local` then.)
 
 ```sh
-$ docker pull dceoy/clir
+$ curl -LSO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
+$ chmod +x install_clir.sh
+$ sudo ./install_clir.sh --root
+$ rm install_clir.sh
+```
+
+Update clir installed into the system.
+
+```sh
+$ sudo /usr/local/src/clir/install_clir.sh --root
 ```
 
 Usage
@@ -128,7 +150,7 @@ Options:
     --list              List URLs of CRAN mirrors
     --devt=<type>       Use `devtools::install_<type>`
                         [choices: cran, github, bitbucket, bioc]
-    --bioc              Use `BiocInstaller::biocLite` from Bioconductor
+    --bioc              Use BiocManager::install
     --no-upgrade        Skip upgrade of old R packages
     --dest-dir=<path>   Set a destination directory [default: .]
     --quiet             Suppress messages
@@ -140,8 +162,9 @@ Commands:
     config              Print configurations for clir
     cran                Set URLs of CRAN mirror sites
     drat                Set Drat repositories
-    update              Update installed R packages via CRAN
+    update              Update installed R packages via CRAN or Bioconductor
     install             Install or update R packages
+    download            Download R packages from CRAN
     uninstall           Uninstall R packages
     validate            Load R packages to validate their installation
     session             Print session infomation
@@ -155,7 +178,7 @@ Arguments:
 Example
 -------
 
-Install or update R packages via CRAN
+Install or update R packages via CRAN.
 
 ```sh
 # Using install.packages()
@@ -165,7 +188,7 @@ $ clir install dplyr tidyr ggplot2
 $ clir install --devt=cran dplyr tidyr ggplot2
 ```
 
-Validate loading of installed R packages
+Validate loading of installed R packages.
 
 ```sh
 $ clir validate dplyr tidyr ggplot2

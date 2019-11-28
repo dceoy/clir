@@ -8,9 +8,9 @@
 #   Set up `clir` command-line R package installer
 #
 # Options:
-#   --root        Install clir with root
+#   --root        Install clir into the system directory (/usr/local)
 #   -f, --force   Force reinstallation
-#   --cran <url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
+#   --cran=<url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   -h, --help    Print usage
 
 set -ue
