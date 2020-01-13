@@ -1,7 +1,7 @@
 clir
 ====
 
-R package manager for command line interface
+R Package Installer for Command Line Interface
 
 [![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/s/master "wercker status")](https://app.wercker.com/project/byKey/e04414d822f906b0704855f5c2d600bf)
 
@@ -130,7 +130,7 @@ Usage
 
 ```sh
 $ clir --help
-R package manager for command line interface
+R Package Installer for Command Line Interface
 
 Usage:
     clir config [-v] [--init]
