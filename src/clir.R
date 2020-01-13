@@ -3,17 +3,17 @@
 'R package manager for command line interface
 
 Usage:
-    clir config [-d] [--init]
-    clir cran [-d] [--list] [<url>...]
-    clir drat [-d] <repo>...
-    clir update [-d] [--quiet] [--bioc]
-    clir install [-d] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
-    clir download [-d] [--quiet] [--dest-dir=<path>] <pkg>...
-    clir uninstall [-d] [--quiet] <pkg>...
-    clir validate [-d] [--quiet] <pkg>...
-    clir session [-d] [<pkg>...]
+    clir config [-v] [--init]
+    clir cran [-v] [--list] [<url>...]
+    clir drat [-v] <repo>...
+    clir update [-v] [--quiet] [--bioc]
+    clir install [-v] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
+    clir download [-v] [--quiet] [--dest-dir=<path>] <pkg>...
+    clir uninstall [-v] [--quiet] <pkg>...
+    clir validate [-v] [--quiet] <pkg>...
+    clir session [-v] [<pkg>...]
     clir -h|--help
-    clir -v|--version
+    clir --version
 
 Options:
     --init              Initialize configurations for clir
@@ -24,9 +24,9 @@ Options:
     --no-upgrade        Skip upgrade of old R packages
     --dest-dir=<path>   Set a destination directory [default: .]
     --quiet             Suppress messages
-    -d                  Execute a command with debug messages
+    -v                  Execute a command with verbose messages
     -h, --help          Print help and exit
-    -v, --version       Print version and exit
+    --version           Print version and exit
 
 Commands:
     config              Print configurations for clir
@@ -44,7 +44,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.1.0'
+clir_version <- 'v1.1.1'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -67,17 +67,17 @@ fetch_clir_root <- function() {
 
 main <- function(args, clir_root_dir = fetch_clir_root(),
                  r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = args[['-d']])
+  options(warn = 1, verbose = args[['-v']])
   loaded <- list(args = args,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
-                              quietly = (! args[['-d']])),
+                              quietly = (! args[['-v']])),
                  src = source(file.path(clir_root_dir, 'src/util.R')))
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
   repos <- load_repos(clir_yml = clir_yml, quiet = args[['--quiet']])
   options(repos = repos)
-  if (args[['-d']]) {
+  if (args[['-v']]) {
     print(c(loaded, sapply(c('repos'), getOption)))
   }
   if (args[['config']]) {

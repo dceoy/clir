@@ -5,12 +5,12 @@ R package manager for command line interface
 
 [![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/s/master "wercker status")](https://app.wercker.com/project/byKey/e04414d822f906b0704855f5c2d600bf)
 
-Supported R versions:
+#### Supported versions
 
-- R &ge; 3.5
-  - clir v1.1.0 (latest)
-- R &lt; 3.5
-  - clir v1.0.8
+|     R    |     clir    |
+|:--------:|:-----------:|
+| &ge; 3.5 | &ge; v1.1.0 |
+| &lt; 3.5 | &lt; v1.0.8 |
 
 Docker image
 ------------
@@ -133,17 +133,17 @@ $ clir --help
 R package manager for command line interface
 
 Usage:
-    clir config [-d] [--init]
-    clir cran [-d] [--list] [<url>...]
-    clir drat [-d] <repo>...
-    clir update [-d] [--quiet] [--bioc]
-    clir install [-d] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
-    clir download [-d] [--quiet] [--dest-dir=<path>] <pkg>...
-    clir uninstall [-d] [--quiet] <pkg>...
-    clir validate [-d] [--quiet] <pkg>...
-    clir session [-d] [<pkg>...]
+    clir config [-v] [--init]
+    clir cran [-v] [--list] [<url>...]
+    clir drat [-v] <repo>...
+    clir update [-v] [--quiet] [--bioc]
+    clir install [-v] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
+    clir download [-v] [--quiet] [--dest-dir=<path>] <pkg>...
+    clir uninstall [-v] [--quiet] <pkg>...
+    clir validate [-v] [--quiet] <pkg>...
+    clir session [-v] [<pkg>...]
     clir -h|--help
-    clir -v|--version
+    clir --version
 
 Options:
     --init              Initialize configurations for clir
@@ -154,9 +154,9 @@ Options:
     --no-upgrade        Skip upgrade of old R packages
     --dest-dir=<path>   Set a destination directory [default: .]
     --quiet             Suppress messages
-    -d                  Execute a command with debug messages
+    -v                  Execute a command with verbose messages
     -h, --help          Print help and exit
-    -v, --version       Print version and exit
+    --version           Print version and exit
 
 Commands:
     config              Print configurations for clir
