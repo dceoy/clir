@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ADD install_clir.sh /tmp/install_clir.sh
 
 RUN set -e \
-      && ln -sf /bin/bash /bin/sh
+      && ln -sf bash /bin/sh
 
 RUN set -e \
       && apt-get -y update \
