@@ -78,7 +78,7 @@ update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
 
 install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
                          r_lib = .libPaths()[1], upgrade = TRUE, depend = TRUE,
-                         quiet = FALSE) {
+                         quiet = FALSE, clean = TRUE) {
   installed_pkgs <- rownames(installed.packages(lib.loc = r_lib))
   ps <- list(all = pkgs,
              old = intersect(pkgs, installed_pkgs),
@@ -94,13 +94,13 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
         }
         if (length(ps$new) > 0) {
           install.packages(pkgs = ps$new, repos = repos, lib = r_lib,
-                           dependencies = depend, quiet = quiet)
+                           dependencies = depend, quiet = quiet, clean = clean)
         }
       }
     } else if (devt %in% c('cran', 'github', 'bitbucket', 'bioc')) {
       if (! require('devtools', quietly = TRUE)) {
         install.packages(pkgs = 'devtools', repos = repos, lib = r_lib,
-                         dependencies = TRUE, quiet = quiet)
+                         dependencies = TRUE, quiet = quiet, clean = clean)
       }
       if (require('devtools', quietly = TRUE)) {
         if (upgrade) {

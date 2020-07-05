@@ -118,7 +118,7 @@ options(repos = c(CRAN = '${CRAN_URL}'));
 sapply(c('docopt', 'yaml', 'devtools', 'drat', 'BiocManager'),
        function(p) {
          if ((${REINSTALL} != 0) || (! require(p, character.only = TRUE))) {
-           install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE);
+           install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE, clean = TRUE);
          };
          library(p, character.only = TRUE);
        });
