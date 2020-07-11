@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   install_clir.sh [--root] [-f|--force] [--cran=<url>]
+#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--update-ppkgs]
 #   install_clir.sh -h|--help
 #
 # Description:
 #   Set up `clir` command-line R package installer
 #
 # Options:
-#   --root        Install clir into the system directory (/usr/local)
-#   -f, --force   Force reinstallation
-#   --cran=<url>  Set a URL for CRAN [default: https://cloud.r-project.org/]
-#   -h, --help    Print usage
+#   --root          Install clir into the system directory (/usr/local)
+#   -f, --force     Force reinstallation
+#   --cran=<url>    Set a URL for CRAN [default: https://cloud.r-project.org/]
+#   --update-pkgs   Update packages before installation
+#   -h, --help      Print usage
 
 set -ue
 
@@ -42,6 +43,7 @@ function abort {
 SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
+UPDATE_PKGS=0
 
 while [[ ${#} -ge 1 ]]; do
   case "${1}" in
@@ -59,6 +61,9 @@ while [[ ${#} -ge 1 ]]; do
       ;;
     --cran=* )
       CRAN_URL="${1#*\=}" && shift 1
+      ;;
+    '--update-pkgs' )
+      UPDATE_PKGS=1 && shift 1
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -92,6 +97,11 @@ R --version || abort 'R is not found.'
 git --version || abort 'Git is not found.'
 echo
 
+if [[ ${UPDATE_PKGS} -ne 0 ]]; then
+  echo '>>> Update packages'
+  R -q -e 'update.packages(checkBuilt = TRUE, ask = FALSE)'
+fi
+
 echo '>>> Check out clir from GitHub'
 if [[ ! -d "${CLIR_ROOT}" ]]; then
   git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
@@ -113,7 +123,7 @@ if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
 else
   ln -sf /usr/local/src/clir/src/clir.R /usr/local/bin/clir
 fi
-cat << EOF | R --vanilla --slave || abort 'Package installation failed.'
+cat << EOF | R -q || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
 sapply(c('docopt', 'yaml', 'devtools', 'drat', 'BiocManager'),
        function(p) {

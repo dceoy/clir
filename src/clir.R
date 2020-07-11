@@ -11,7 +11,7 @@ Usage:
     clir download [-v] [--quiet] [--dest-dir=<path>] <pkg>...
     clir uninstall [-v] [--quiet] <pkg>...
     clir validate [-v] [--quiet] <pkg>...
-    clir session [-v] [<pkg>...]
+    clir session [-v] [--quiet] [<pkg>...]
     clir -h|--help
     clir --version
 
@@ -44,7 +44,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.1.1'
+clir_version <- 'v1.1.2'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
