@@ -61,24 +61,27 @@ print_cran_mirrors <- function(https = TRUE) {
   }
 }
 
-load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1]) {
+load_n_run_bioclite <- function(pkgs, repos, r_lib = .libPaths()[1], ...) {
   BiocManager::install(pkgs = pkgs, lib.loc = r_lib, lib = r_lib,
-                       siteRepos = repos, update = TRUE, ask = FALSE)
+                       siteRepos = repos, update = TRUE, ask = FALSE, ...)
 }
 
 update_pkgs <- function(repos, bioc = FALSE, r_lib = .libPaths()[1],
-                        quiet = FALSE) {
+                        check_built = TRUE, quiet = FALSE) {
   if (bioc) {
     load_n_run_bioclite(pkgs = rownames(installed.packages(lib.loc = r_lib)),
-                        repos = repos, r_lib = r_lib)
+                        repos = repos, r_lib = r_lib, checkBuilt = check_built,
+                        quiet = quiet)
   } else {
-    update.packages(lib.loc = r_lib, repos = repos, ask = FALSE, quiet = quiet)
+    update.packages(lib.loc = r_lib, repos = repos, ask = FALSE,
+                    checkBuilt = check_built, quiet = quiet)
   }
 }
 
 install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
-                         r_lib = .libPaths()[1], upgrade = TRUE, depend = TRUE,
-                         quiet = FALSE, clean = TRUE) {
+                         r_lib = .libPaths()[1], check_built = TRUE,
+                         upgrade = TRUE, depend = TRUE, quiet = FALSE,
+                         clean = TRUE) {
   installed_pkgs <- rownames(installed.packages(lib.loc = r_lib))
   ps <- list(all = pkgs,
              old = intersect(pkgs, installed_pkgs),
@@ -86,11 +89,12 @@ install_pkgs <- function(pkgs, repos, devt, bioc = FALSE,
   if (upgrade || (length(ps$new) > 0)) {
     if (is.null(devt)) {
       if (bioc) {
-        load_n_run_bioclite(pkgs = ps$all, repos = repos, r_lib = r_lib)
+        load_n_run_bioclite(pkgs = ps$all, repos = repos, r_lib = r_lib,
+                            checkBuilt = check_built, quiet = quiet)
       } else {
         if (upgrade && (length(ps$old) > 0)) {
-          update.packages(instPkgs = ps$old, repos = repos, ask = FALSE,
-                          lib.loc = r_lib, quiet = quiet)
+          update.packages(instPkgs = ps$old, repos = repos, lib.loc = r_lib,
+                          ask = FALSE, checkBuilt = check_built, quiet = quiet)
         }
         if (length(ps$new) > 0) {
           install.packages(pkgs = ps$new, repos = repos, lib = r_lib,
