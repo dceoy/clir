@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--update-ppkgs]
-#                   [--delete-r-lib]
+#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--delete-r-lib]
 #   install_clir.sh -h|--help
 #
 # Description:
@@ -12,7 +11,6 @@
 #   --root          Install clir into the system directory (/usr/local)
 #   -f, --force     Force reinstallation
 #   --cran=<url>    Set a URL for CRAN [default: https://cloud.r-project.org/]
-#   --update-pkgs   Update packages before installation
 #   --delete-r-lib  Delete the install packages before installation
 #                   (remove `.libPaths()[[1]]`)
 #   -h, --help      Print usage
@@ -46,7 +44,6 @@ function abort {
 SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
-UPDATE_PKGS=0
 DELETE_R_LIB=0
 
 while [[ ${#} -ge 1 ]]; do
@@ -65,9 +62,6 @@ while [[ ${#} -ge 1 ]]; do
       ;;
     --cran=* )
       CRAN_URL="${1#*\=}" && shift 1
-      ;;
-    '--update-pkgs' )
-      UPDATE_PKGS=1 && shift 1
       ;;
     '--delete-r-lib' )
       DELETE_R_LIB=1 && shift 1
@@ -107,11 +101,6 @@ echo
 if [[ ${DELETE_R_LIB} -ne 0 ]]; then
   echo '>>> Delete the installed packages'
   R -q -e 'system(paste("set -ex && rm -rf ", .libPaths()[[1]], collapse = ""));'
-fi
-
-if [[ ${UPDATE_PKGS} -ne 0 ]]; then
-  echo '>>> Update packages'
-  R -q -e 'update.packages(checkBuilt = TRUE, ask = FALSE);'
 fi
 
 echo '>>> Check out clir from GitHub'
