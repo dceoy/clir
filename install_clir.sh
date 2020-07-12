@@ -2,6 +2,7 @@
 #
 # Usage:
 #   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--update-ppkgs]
+#                   [--delete-r-lib]
 #   install_clir.sh -h|--help
 #
 # Description:
@@ -12,6 +13,8 @@
 #   -f, --force     Force reinstallation
 #   --cran=<url>    Set a URL for CRAN [default: https://cloud.r-project.org/]
 #   --update-pkgs   Update packages before installation
+#   --delete-r-lib  Delete the install packages before installation
+#                   (remove `.libPaths()[[1]]`)
 #   -h, --help      Print usage
 
 set -ue
@@ -43,7 +46,8 @@ function abort {
 SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
-UPDATE=0
+UPDATE_PKGS=0
+DELETE_R_LIB=0
 
 while [[ ${#} -ge 1 ]]; do
   case "${1}" in
@@ -63,7 +67,10 @@ while [[ ${#} -ge 1 ]]; do
       CRAN_URL="${1#*\=}" && shift 1
       ;;
     '--update-pkgs' )
-      UPDATE=1 && shift 1
+      UPDATE_PKGS=1 && shift 1
+      ;;
+    '--delete-r-lib' )
+      DELETE_R_LIB=1 && shift 1
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -97,7 +104,12 @@ R --version || abort 'R is not found.'
 git --version || abort 'Git is not found.'
 echo
 
-if [[ ${UPDATE} -ne 0 ]]; then
+if [[ ${DELETE_R_LIB} -ne 0 ]]; then
+  echo '>>> Delete the installed packages'
+  R -q -e 'system(paste("set -ex && rm -rf ", .libPaths()[[1]], collapse = ""));'
+fi
+
+if [[ ${UPDATE_PKGS} -ne 0 ]]; then
   echo '>>> Update packages'
   R -q -e 'update.packages(checkBuilt = TRUE, ask = FALSE);'
 fi
