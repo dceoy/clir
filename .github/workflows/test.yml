@@ -1,29 +1,33 @@
 ---
-box:
-  id: dceoy/wercker-base
-  entrypoint: /bin/bash -c
-build:
-  steps:
-    - script:
-        name: Prepare required packages
-        code: |
-          apt-get -y update
-          apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
-    - script:
-        name: Install clir
-        code: |
+name: Test
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  test_installation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare required packages
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
+      - name: Install clir
+        run: |
           curl -SO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
           chmod +x install_clir.sh
           ./install_clir.sh
-    - script:
-        name: Set environment variables
-        code: |
+      - name: Set environment variables
+        run: |
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
           echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
           source ~/.bash_profile
-    - script:
-        name: Test configuration
-        code: |
+      - name: Test configuration
+        run: |
           set -x
           clir --version
           clir config
@@ -33,33 +37,24 @@ build:
           clir config
           clir config --init
           set +x
-    - script:
-        name: Test installation
-        code: |
+      - name: Test installation
+        run: |
           set -x
           clir update
           clir install foreach doSNOW
           clir validate foreach doSNOW
           clir session foreach doSNOW
           set +x
-    - script:
-        name: Test uninstallation
-        code: |
+      - name: Test uninstallation
+        run: |
           set -x
           clir uninstall foreach doSNOW
-          for p in 'foreach' 'doSNOW'; do
-            [[ ! -d "${HOME}/.clir/r/library/${p}" ]] \
-              && echo "${p} is uninstalled."
-          done
+          [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
+          [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
           set +x
-    - script:
-        name: Test downloading
-        code: |
+      - name: Test downloading
+        run: |
           set -x
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
           set +x
-  after-steps:
-    - slack-notifier:
-        url: $SLACK_URL
-        channel: $SLACK_CHANNEL
