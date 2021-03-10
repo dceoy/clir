@@ -25,9 +25,9 @@ jobs:
         run: |
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
           echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
-          source ~/.bash_profile
       - name: Test configuration
         run: |
+          source ~/.bash_profile
           set -x
           clir --version
           clir config
@@ -39,6 +39,7 @@ jobs:
           set +x
       - name: Test installation
         run: |
+          source ~/.bash_profile
           set -x
           clir update
           clir install foreach doSNOW
@@ -47,6 +48,7 @@ jobs:
           set +x
       - name: Test uninstallation
         run: |
+          source ~/.bash_profile
           set -x
           clir uninstall foreach doSNOW
           [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
@@ -54,6 +56,7 @@ jobs:
           set +x
       - name: Test downloading
         run: |
+          source ~/.bash_profile
           set -x
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*

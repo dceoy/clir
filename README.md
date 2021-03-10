@@ -3,7 +3,7 @@ clir
 
 R Package Installer for Command Line Interface
 
-[![wercker status](https://app.wercker.com/status/e04414d822f906b0704855f5c2d600bf/s/master "wercker status")](https://app.wercker.com/project/byKey/e04414d822f906b0704855f5c2d600bf)
+[![Test](https://github.com/dceoy/clir/actions/workflows/test.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/test.yml)
 
 #### Supported versions
 
