@@ -12,8 +12,8 @@ RUN set -e \
       && apt-get -y dist-upgrade \
       && apt-get -y install --no-install-recommends --no-install-suggests \
         apt-transport-https apt-utils ca-certificates curl g++ gcc gfortran \
-        git make libblas-dev libcurl4-gnutls-dev libgit2-dev liblapack-dev \
-        libssh-dev libssl-dev libxml2-dev r-base \
+        git libblas-dev libcurl4-gnutls-dev libgit2-dev liblapack-dev libssh-dev \
+        libssl-dev libxml2-dev make r-base \
       && apt-get -y autoremove \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
