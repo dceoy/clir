@@ -4,6 +4,7 @@ clir
 R Package Installer for Command Line Interface
 
 [![Test](https://github.com/dceoy/clir/actions/workflows/test.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/test.yml)
+[![CI to Docker Hub](https://github.com/dceoy/clir/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/docker-publish.yml)
 
 #### Supported versions
 
