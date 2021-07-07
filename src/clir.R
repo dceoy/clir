@@ -3,15 +3,15 @@
 'R Package Installer for Command Line Interface
 
 Usage:
-    clir config [-v] [--quiet] [--init]
-    clir cran [-v] [--quiet] [--list] [<url>...]
-    clir drat [-v] [--quiet] <repo>...
-    clir update [-v] [--quiet] [--bioc]
-    clir install [-v] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
-    clir download [-v] [--quiet] [--dest-dir=<path>] <pkg>...
-    clir uninstall [-v] [--quiet] <pkg>...
-    clir validate [-v] [--quiet] <pkg>...
-    clir session [-v] [--quiet] [<pkg>...]
+    clir config [-v] [-q] [--init]
+    clir cran [-v] [-q] [--list] [<url>...]
+    clir drat [-v] [-q] <repo>...
+    clir update [-v] [-q] [--bioc]
+    clir install [-v] [-q] [--devt=<type>|--bioc] [--no-upgrade] [--cpus=<int>] <pkg>...
+    clir download [-v] [-q] [--dest-dir=<path>] <pkg>...
+    clir uninstall [-v] [-q] <pkg>...
+    clir validate [-v] [-q] <pkg>...
+    clir session [-v] [-q] [<pkg>...]
     clir -h|--help
     clir --version
 
@@ -22,8 +22,9 @@ Options:
                         [choices: cran, github, bitbucket, bioc]
     --bioc              Use BiocManager::install
     --no-upgrade        Skip upgrade of old R packages
+    --cpus=<int>        Specify Ncpus
     --dest-dir=<path>   Set a destination directory [default: .]
-    --quiet             Suppress messages
+    -q                  Suppress messages
     -v                  Execute a command with verbose messages
     -h, --help          Print help and exit
     --version           Print version and exit
@@ -44,7 +45,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names' -> doc
 
-clir_version <- 'v1.1.2'
+clir_version <- 'v1.2.0'
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -67,7 +68,12 @@ fetch_clir_root <- function() {
 
 main <- function(args, clir_root_dir = fetch_clir_root(),
                  r_lib = .libPaths()[1]) {
-  options(warn = 1, verbose = args[['-v']])
+  ncpus <- ifelse(is.null(args[['--cpus']]),
+                  parallel::detectCores(), as.integer(args[['--cpus']]))
+  options(warn = 1, Ncpus = ncpus, verbose = args[['-v']])
+  if (args[['-v']]) {
+    print(list(warn = 1, Ncpus = ncpus, verbose = args[['-v']]))
+  }
   loaded <- list(args = args,
                  pkg = sapply(c('devtools', 'drat', 'stringr', 'yaml'),
                               require, character.only = TRUE,
@@ -75,7 +81,7 @@ main <- function(args, clir_root_dir = fetch_clir_root(),
                  src = source(file.path(clir_root_dir, 'src/util.R')))
   make_clir_dirs(clir_root_dir = clir_root_dir)
   clir_yml <- file.path(clir_root_dir, 'r/clir.yml')
-  repos <- load_repos(clir_yml = clir_yml, quiet = args[['--quiet']])
+  repos <- load_repos(clir_yml = clir_yml, quiet = args[['-q']])
   options(repos = repos)
   if (args[['-v']]) {
     print(c(loaded, sapply(c('repos'), getOption)))
@@ -94,19 +100,19 @@ main <- function(args, clir_root_dir = fetch_clir_root(),
     add_config(new = args[['<repo>']], key = 'drat_repos', clir_yml = clir_yml)
   } else if (args[['update']]) {
     update_pkgs(repos = repos, r_lib = r_lib, bioc = args[['--bioc']],
-                quiet = args[['--quiet']])
+                quiet = args[['-q']])
   } else if (args[['install']]) {
     install_pkgs(pkgs = args[['<pkg>']], repos = repos,
                  bioc = args[['--bioc']], devt = args[['--devt']],
                  r_lib = r_lib, upgrade = (! args[['--no-upgrade']]),
-                 quiet = args[['--quiet']])
+                 quiet = args[['-q']])
   } else if (args[['download']]) {
     download.packages(pkgs = args[['<pkg>']], destdir = args[['--dest-dir']],
                       repos = repos, type = 'source')
   } else if (args[['uninstall']]) {
     remove.packages(pkgs = args[['<pkg>']], lib = r_lib)
   } else if (args[['validate']]) {
-    validate_loading(pkgs = args[['<pkg>']], quiet = args[['--quiet']])
+    validate_loading(pkgs = args[['<pkg>']], quiet = args[['-q']])
   } else if (args[['session']]) {
     print_sessions(pkgs = args[['<pkg>']])
   } else {
@@ -116,7 +122,7 @@ main <- function(args, clir_root_dir = fetch_clir_root(),
 
 if (! interactive()) {
   args <- docopt::docopt(doc, version = clir_version)
-  if (args[['--quiet']]) {
+  if (args[['-q']]) {
     suppressMessages(main(args = args))
   } else {
     main(args = args)
