@@ -42,9 +42,13 @@ jobs:
           source ~/.bash_profile
           set -x
           clir update
-          clir install foreach doSNOW
-          clir validate foreach doSNOW
-          clir session foreach doSNOW
+          clir install foreach doParallel tidyverse
+          clir install --devt=cran foreach doParallel tidyverse
+          clir install --devt=github IRkernel/IRkernel
+          clir install --bioc GenomicRanges
+          clir install --devt=bioc GenomicRanges
+          clir validate foreach doParallel tidyverse
+          clir session foreach doParallel tidyverse
           set +x
       - name: Test uninstallation
         run: |
