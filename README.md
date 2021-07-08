@@ -13,19 +13,78 @@ R Package Installer for Command Line Interface
 | &ge; 3.5 | &ge; v1.1.0 |
 | &lt; 3.5 | &lt; v1.0.8 |
 
+Usage
+-----
+
+#### Installation or update of R packages
+
+- Install packages via CRAN using `install.packages()`.
+
+  ```sh
+  $ clir install foreach doParallel tidyverse
+  ```
+
+- Install or update packages via CRAN using `devtools::install_cran()`.
+
+  ```sh
+  $ clir install --devt=cran foreach doParallel tidyverse
+  ```
+
+- Install or update packages via GitHub using `devtools::install_github()`.
+
+  ```sh
+  $ clir install --devt=github IRkernel/IRkernel
+  ```
+
+- Install or update packages via Bioconductor using `BiocManager::install()`.
+
+  ```sh
+  $ clir install --bioc GenomicRanges
+  ```
+
+- Install or update packages via Bioconductor using `devtools::install_bioc()`.
+
+  ```sh
+  $ clir install --devt=bioc GenomicRanges
+  ```
+
+- Update packages via CRAN using `update.packages()`.
+
+  ```sh
+  $ clir update
+  ```
+
+#### Validation of installed R packages
+
+- Validate loading of installed packages.
+
+  ```sh
+  $ clir validate foreach doParallel tidyverse
+  ```
+
+#### Session information
+
+- Load packages and print session information.
+
+  ```sh
+  $ clir session foreach doParallel tidyverse
+  ```
+
+Run `clir --help` for information.
+
 Docker image
 ------------
 
 The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
 
 ```sh
-$ docker pull dceoy/clir
+$ docker image pull dceoy/clir
 ```
 
-Setup
------
+Installation
+------------
 
-#### Installation
+#### Installation into a local environment
 
 1.  Install R and the additional packages.
 
@@ -78,22 +137,34 @@ Setup
 
     If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
 
-#### Update
+#### Installation into a system
 
-Update clir and the dependencies.
-
-```sh
-$ ~/.clir/install_clir.sh
-```
-
-Update only clir.
+Run the installer with `--root` if you install clir into a system. (clir is going to be installed into `/usr/local` then.)
 
 ```sh
-$ cd ~/.clir
-$ git pull
+$ curl -LSO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
+$ chmod +x install_clir.sh
+yy$ sudo ./install_clir.sh --root
+$ rm install_clir.sh
 ```
 
-#### Configuration
+Update
+------
+
+#### Update of clir in a local environment
+
+  ```sh
+  $ ~/.clir/install_clir.sh
+  ```
+
+#### Update of clir installed into the system
+
+  ```sh
+  $ sudo /usr/local/src/clir/install_clir.sh --root
+  ```
+
+Configuration
+-------------
 
 - Library path
 
@@ -108,89 +179,3 @@ $ git pull
 - CRAN and Drat repositories
 
   clir saves URLs of CRAN mirrors and Drat repositories into `~/.clir/r/clir.yml` as a YAML file.
-
-#### Installation into a system
-
-Run the installer with `--root` if you install clir into a system. (clir is going to be installed into `/usr/local` then.)
-
-```sh
-$ curl -LSO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
-$ chmod +x install_clir.sh
-$ sudo ./install_clir.sh --root
-$ rm install_clir.sh
-```
-
-Update clir installed into the system.
-
-```sh
-$ sudo /usr/local/src/clir/install_clir.sh --root
-```
-
-Usage
------
-
-```sh
-$ clir --help
-R Package Installer for Command Line Interface
-
-Usage:
-    clir config [-v] [--init]
-    clir cran [-v] [--list] [<url>...]
-    clir drat [-v] <repo>...
-    clir update [-v] [--quiet] [--bioc]
-    clir install [-v] [--quiet] [--devt=<type>|--bioc] [--no-upgrade] <pkg>...
-    clir download [-v] [--quiet] [--dest-dir=<path>] <pkg>...
-    clir uninstall [-v] [--quiet] <pkg>...
-    clir validate [-v] [--quiet] <pkg>...
-    clir session [-v] [<pkg>...]
-    clir -h|--help
-    clir --version
-
-Options:
-    --init              Initialize configurations for clir
-    --list              List URLs of CRAN mirrors
-    --devt=<type>       Use `devtools::install_<type>`
-                        [choices: cran, github, bitbucket, bioc]
-    --bioc              Use BiocManager::install
-    --no-upgrade        Skip upgrade of old R packages
-    --dest-dir=<path>   Set a destination directory [default: .]
-    --quiet             Suppress messages
-    -v                  Execute a command with verbose messages
-    -h, --help          Print help and exit
-    --version           Print version and exit
-
-Commands:
-    config              Print configurations for clir
-    cran                Set URLs of CRAN mirror sites
-    drat                Set Drat repositories
-    update              Update installed R packages via CRAN or Bioconductor
-    install             Install or update R packages
-    download            Download R packages from CRAN
-    uninstall           Uninstall R packages
-    validate            Load R packages to validate their installation
-    session             Print session infomation
-
-Arguments:
-    <url>...            URLs of CRAN mirrors
-    <repo>...           Drat repository names
-    <pkg>...            R package names
-```
-
-Example
--------
-
-Install or update R packages via CRAN.
-
-```sh
-# Using install.packages()
-$ clir install dplyr tidyr ggplot2
-
-# Using devtools::install_cran()
-$ clir install --devt=cran dplyr tidyr ggplot2
-```
-
-Validate loading of installed R packages.
-
-```sh
-$ clir validate dplyr tidyr ggplot2
-```
