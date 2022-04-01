@@ -39,6 +39,8 @@ jobs:
           clir config --init
           set +x
       - name: Test installation
+        env:
+          GITHUB_PAT: ${{ secrets.PAT }}
         run: |
           source ~/.bash_profile
           set -x
