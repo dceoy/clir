@@ -16,7 +16,10 @@ jobs:
       - name: Prepare required packages
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
+          sudo apt-get -y install \
+            git libcurl4-gnutls-dev libfontconfig1-dev libfreetype6-dev \
+            libfribidi-dev libharfbuzz-dev libjpeg-dev libpng-dev libssl-dev \
+            libtiff5-dev libxml2-dev r-base
       - name: Install clir
         run: |
           curl -SO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
