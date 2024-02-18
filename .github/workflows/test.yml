@@ -1,5 +1,5 @@
 ---
-name: Test
+name: Test installation
 on:
   push:
     branches:
@@ -9,7 +9,7 @@ on:
       - master
   workflow_dispatch:
 jobs:
-  test_installation:
+  test-installation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,9 +30,8 @@ jobs:
           echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
           echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
       - name: Test configuration
+        shell: bash -l -euox pipefail {0}
         run: |
-          source ~/.bash_profile
-          set -x
           clir --version
           clir config
           clir cran --list
@@ -40,13 +39,11 @@ jobs:
           clir drat dmlc
           clir config
           clir config --init
-          set +x
       - name: Test installation
+        shell: bash -l -euox pipefail {0}
         env:
           GITHUB_PAT: ${{ secrets.PAT }}
         run: |
-          source ~/.bash_profile
-          set -x
           clir update
           clir install foreach doParallel tidyverse
           clir install --devt=cran foreach doParallel tidyverse
@@ -55,19 +52,14 @@ jobs:
           clir install --devt=bioc GenomicRanges
           clir validate foreach doParallel tidyverse
           clir session foreach doParallel tidyverse
-          set +x
       - name: Test uninstallation
+        shell: bash -l -euox pipefail {0}
         run: |
-          source ~/.bash_profile
-          set -x
           clir uninstall foreach doSNOW
           [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
           [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
-          set +x
       - name: Test downloading
+        shell: bash -l -euox pipefail {0}
         run: |
-          source ~/.bash_profile
-          set -x
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
-          set +x

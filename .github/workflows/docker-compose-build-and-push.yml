@@ -1,0 +1,13 @@
+---
+name: CI to Docker Hub
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build-and-push:
+    uses: dceoy/gh-actions-for-devops/.github/workflows/docker-compose-build-and-push.yml@main
+    secrets:
+      DOCKER_USER: ${{ github.actor }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
