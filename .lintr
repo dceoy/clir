@@ -1,4 +1,10 @@
 linters: linters_with_defaults(
     line_length_linter(99),
     object_usage_linter = NULL
-  )
+  ) # see vignette("lintr")
+encoding: "UTF-8"
+exclusions: list(
+    "renv",
+    "packrat",
+    "r"
+  ) # see ?lintr::exclude

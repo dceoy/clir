@@ -3,7 +3,7 @@ name: CI to Docker Hub
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 jobs:
   build-and-push:

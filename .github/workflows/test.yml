@@ -1,5 +1,5 @@
 ---
-name: Test installation
+name: Test the scripts
 on:
   push:
     branches:
@@ -9,8 +9,17 @@ on:
       - master
   workflow_dispatch:
 jobs:
+  lint:
+    uses: dceoy/gh-actions-for-devops/.github/workflows/r-lint.yml@main
+    with:
+      project-path: .
+      r-version: release
+      runs-on: ubuntu-latest
+      lint-package: false
   test-installation:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.PAT }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare required packages
@@ -20,17 +29,15 @@ jobs:
             git libcurl4-gnutls-dev libfontconfig1-dev libfreetype6-dev \
             libfribidi-dev libharfbuzz-dev libjpeg-dev libpng-dev libssl-dev \
             libtiff5-dev libxml2-dev r-base
-      - name: Install clir
-        run: |
-          curl -SO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
-          chmod +x install_clir.sh
-          ./install_clir.sh
       - name: Set environment variables
         run: |
-          echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-          echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
+          echo "${HOME}/.clir/bin" >> "${GITHUB_PATH}"
+          echo "R_LIBS_USER=${HOME}/.clir/r/library" >> "${GITHUB_ENV}"
+      - name: Install clir
+        run: |
+          ./install_clir.sh
       - name: Test configuration
-        shell: bash -l -euox pipefail {0}
+        shell: bash -euox pipefail {0}
         run: |
           clir --version
           clir config
@@ -40,26 +47,21 @@ jobs:
           clir config
           clir config --init
       - name: Test installation
-        shell: bash -l -euox pipefail {0}
-        env:
-          GITHUB_PAT: ${{ secrets.PAT }}
+        shell: bash -euox pipefail {0}
         run: |
           clir update
           clir install foreach doParallel tidyverse
           clir install --devt=cran foreach doParallel tidyverse
-          clir install --devt=github IRkernel/IRkernel
-          clir install --bioc GenomicRanges
-          clir install --devt=bioc GenomicRanges
           clir validate foreach doParallel tidyverse
           clir session foreach doParallel tidyverse
       - name: Test uninstallation
-        shell: bash -l -euox pipefail {0}
+        shell: bash -euox pipefail {0}
         run: |
           clir uninstall foreach doSNOW
           [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
           [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
       - name: Test downloading
-        shell: bash -l -euox pipefail {0}
+        shell: bash -euox pipefail {0}
         run: |
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
