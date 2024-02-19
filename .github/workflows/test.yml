@@ -1,5 +1,5 @@
 ---
-name: Test the scripts
+name: Test
 on:
   push:
     branches:
@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
 jobs:
   lint:
-    uses: dceoy/gh-actions-for-devops/.github/workflows/r-lint.yml@main
+    uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
     with:
-      project-path: .
+      package-path: .
       r-version: release
       runs-on: ubuntu-latest
       lint-package: false

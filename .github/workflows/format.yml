@@ -1,0 +1,15 @@
+---
+name: Formatting
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  format-and-pr:
+    uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-format-and-pr.yml@main
+    with:
+      package-path: .
+      r-version: release
+      runs-on: ubuntu-latest
+      format-package: false
