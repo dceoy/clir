@@ -8,6 +8,10 @@ on:
     branches:
       - master
   workflow_dispatch:
+defaults:
+  run:
+    shell: bash -euox pipefail {0}
+    working-directory: .
 jobs:
   lint:
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
@@ -37,7 +41,6 @@ jobs:
         run: |
           ./install_clir.sh
       - name: Test configuration
-        shell: bash -euox pipefail {0}
         run: |
           clir --version
           clir config
@@ -47,7 +50,6 @@ jobs:
           clir config
           clir config --init
       - name: Test installation
-        shell: bash -euox pipefail {0}
         run: |
           clir update
           clir install foreach doParallel tidyverse
@@ -55,13 +57,11 @@ jobs:
           clir validate foreach doParallel tidyverse
           clir session foreach doParallel tidyverse
       - name: Test uninstallation
-        shell: bash -euox pipefail {0}
         run: |
           clir uninstall foreach doSNOW
           [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
           [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
       - name: Test downloading
-        shell: bash -euox pipefail {0}
         run: |
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
