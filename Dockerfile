@@ -1,15 +1,14 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD install_clir.sh /tmp/install_clir.sh
+COPY install_clir.sh /tmp/install_clir.sh
 
-RUN set -e \
-      && ln -sf bash /bin/sh
+ENV SHELL /bin/bash
 
 RUN set -e \
       && apt-get -y update \
-      && apt-get -y dist-upgrade \
+      && apt-get -y upgrade \
       && apt-get -y install --no-install-recommends --no-install-suggests \
         apt-transport-https apt-utils ca-certificates curl g++ gcc gfortran \
         git libblas-dev libcurl4-gnutls-dev libfontconfig1-dev \
