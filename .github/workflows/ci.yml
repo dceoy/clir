@@ -1,0 +1,76 @@
+---
+name: CI/CD
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+    inputs:
+      workflow:
+        required: true
+        type: choice
+        options:
+          - lint-and-scan
+          - format
+          - build
+        description: Choose the workflow to run
+        default: lint-and-scan
+jobs:
+  r-lint:
+    if: >
+      github.event_name == 'push'
+      || github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-scan')
+    uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
+    with:
+      package-path: .
+      r-version: release
+      runs-on: ubuntu-latest
+      r-libs-user: /usr/local/lib/R/site-library
+      lint-package: false
+  format-and-pr:
+    if: >
+      github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'format')
+    uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-format-and-pr.yml@main
+    with:
+      package-path: .
+      r-version: release
+      runs-on: ubuntu-latest
+      format-package: false
+  docker-build-and-push:
+    if: >
+      github.event_name == 'push'
+      || (
+        github.event_name == 'workflow_dispatch'
+        && inputs.workflow == 'build'
+        && (! (failure() || cancelled()))
+      )
+    needs:
+      - r-lint
+    uses: dceoy/gh-actions-for-devops/.github/workflows/docker-build-and-push.yml@main
+    with:
+      registry: docker.io
+      registry-user: ${{ github.repository_owner }}
+      image-name: ${{ github.repository }}
+      platforms: linux/amd64,linux/arm64
+      context: .
+      file: ./Dockerfile
+      push: true
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+  dependabot-auto-merge:
+    if: >
+      github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    needs:
+      - r-lint
+    uses: dceoy/gh-actions-for-devops/.github/workflows/dependabot-auto-merge.yml@main
+    with:
+      unconditional: true
