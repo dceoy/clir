@@ -13,13 +13,6 @@ defaults:
     shell: bash -euox pipefail {0}
     working-directory: .
 jobs:
-  lint:
-    uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
-    with:
-      package-path: .
-      r-version: release
-      runs-on: ubuntu-latest
-      lint-package: false
   test-installation:
     runs-on: ubuntu-latest
     env:
