@@ -3,8 +3,7 @@ clir
 
 R Package Installer for Command Line Interface
 
-[![Test](https://github.com/dceoy/clir/actions/workflows/test.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/test.yml)
-[![CI to Docker Hub](https://github.com/dceoy/clir/actions/workflows/docker-compose-build-and-push.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/docker-compose-build-and-push.yml)
+[![CI/CD](https://github.com/dceoy/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/ci.yml)
 
 #### Supported versions
 

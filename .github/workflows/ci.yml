@@ -17,17 +17,23 @@ on:
         required: true
         type: choice
         options:
-          - lint-and-scan
+          - lint-and-test
           - format
           - build
         description: Choose the workflow to run
-        default: lint-and-scan
+        default: lint-and-test
 jobs:
+  test:
+    if: >
+      github.event_name == 'push'
+      || github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
+    uses: ./.github/workflows/test.yml
   r-lint:
     if: >
       github.event_name == 'push'
       || github.event_name == 'pull_request'
-      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-scan')
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
     with:
       package-path: .
@@ -71,6 +77,7 @@ jobs:
       github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
     needs:
       - r-lint
+      - test
     uses: dceoy/gh-actions-for-devops/.github/workflows/dependabot-auto-merge.yml@main
     with:
       unconditional: true
