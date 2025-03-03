@@ -61,9 +61,9 @@ fetch_clir_root <- function() {
     } else {
       cmd_path <- normalizePath(file.path(dirname(f), l))
     }
-    return(dirname(dirname(cmd_path)))
+    dirname(dirname(cmd_path))
   } else {
-    return(getwd())
+    getwd()
   }
 }
 
