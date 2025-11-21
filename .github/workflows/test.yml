@@ -13,7 +13,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.PAT }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Prepare required packages
         run: |
           sudo apt-get -y update
