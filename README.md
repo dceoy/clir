@@ -1,5 +1,4 @@
-clir
-====
+# clir
 
 R Package Installer for Command Line Interface
 
@@ -7,13 +6,12 @@ R Package Installer for Command Line Interface
 
 #### Supported versions
 
-|     R    |     clir    |
-|:--------:|:-----------:|
+|    R     |    clir     |
+| :------: | :---------: |
 | &ge; 3.5 | &ge; v1.1.0 |
 | &lt; 3.5 | &lt; v1.0.8 |
 
-Usage
------
+## Usage
 
 #### Installation or update of R packages
 
@@ -71,8 +69,7 @@ Usage
 
 Run `clir --help` for information.
 
-Docker image
-------------
+## Docker image
 
 The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
 
@@ -80,8 +77,7 @@ The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
 $ docker image pull dceoy/clir
 ```
 
-Installation
-------------
+## Installation
 
 #### Installation into a local environment
 
@@ -115,7 +111,6 @@ Installation
     ```
 
     `install_clir.sh` installs the following R packages:
-
     - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
     - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
     - [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
@@ -147,23 +142,21 @@ yy$ sudo ./install_clir.sh --root
 $ rm install_clir.sh
 ```
 
-Update
-------
+## Update
 
 #### Update of clir in a local environment
 
-  ```sh
-  $ ~/.clir/install_clir.sh
-  ```
+```sh
+$ ~/.clir/install_clir.sh
+```
 
 #### Update of clir installed into the system
 
-  ```sh
-  $ sudo /usr/local/src/clir/install_clir.sh --root
-  ```
+```sh
+$ sudo /usr/local/src/clir/install_clir.sh --root
+```
 
-Configuration
--------------
+## Configuration
 
 - Library path
 

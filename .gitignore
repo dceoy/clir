@@ -50,3 +50,6 @@ rsconnect/
 
 # directory for packages and configurations
 r/
+
+# Serena MCP
+.serena/
