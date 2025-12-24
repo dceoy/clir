@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--delete-r-lib]
+#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--delete-r-lib] [--bioconductor]
 #   install_clir.sh -h|--help
 #
 # Description:
 #   Set up `clir` command-line R package installer
 #
 # Options:
-#   --root          Install clir into the system directory (/usr/local)
-#   -f, --force     Force reinstallation
-#   --cran=<url>    Set a URL for CRAN [default: https://cloud.r-project.org/]
-#   --delete-r-lib  Delete the install packages before installation
-#                   (remove `.libPaths()[[1]]`)
-#   -h, --help      Print usage
+#   --root            Install clir into the system directory (/usr/local)
+#   -f, --force       Force reinstallation
+#   --cran=<url>      Set a URL for CRAN [default: https://cloud.r-project.org/]
+#   --delete-r-lib    Delete the install packages before installation
+#                     (remove `.libPaths()[[1]]`)
+#   --bioconductor    Install Bioconductor (BiocManager::install)
+#   -h, --help        Print usage
 
 set -ue
 
@@ -45,6 +46,7 @@ SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
 DELETE_R_LIB=0
+BIOCONDUCTOR=0
 
 while [[ ${#} -ge 1 ]]; do
   case "${1}" in
@@ -65,6 +67,9 @@ while [[ ${#} -ge 1 ]]; do
       ;;
     '--delete-r-lib' )
       DELETE_R_LIB=1 && shift 1
+      ;;
+    '--bioconductor' )
+      BIOCONDUCTOR=1 && shift 1
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -126,20 +131,31 @@ else
 fi
 cat << EOF | R --vanilla -q || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
-sapply(c('docopt', 'yaml', 'devtools', 'drat', 'BiocManager'),
+bioc_install <- ${BIOCONDUCTOR};
+pkgs <- c('docopt', 'yaml', 'devtools', 'drat');
+if (bioc_install != 0) {
+  pkgs <- c(pkgs, 'BiocManager');
+}
+sapply(pkgs,
        function(p) {
          if ((${REINSTALL} != 0) || (! require(p, character.only = TRUE))) {
            install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE, clean = TRUE);
          };
          library(p, character.only = TRUE);
        });
-BiocManager::install();
+if (bioc_install != 0) {
+  BiocManager::install();
+}
 EOF
 echo
 
 echo '>>> Validate installed packages'
 ${CLIR_ROOT}/bin/clir install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
-${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
+if [[ ${BIOCONDUCTOR} -ne 0 ]]; then
+  ${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
+else
+  ${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat
+fi
 echo
 
 echo '>>> Done.'
