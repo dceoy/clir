@@ -29,7 +29,7 @@ load_repos <- function(clir_yml, quiet = FALSE) {
   } else {
     cran <- repos["CRAN"]
   }
-  return(c(CLAN = cran, repos[names(repos) != "CRAN"]))
+  c(CLAN = cran, repos[names(repos) != "CRAN"])
 }
 
 print_config <- function(clir_yml, r_lib = .libPaths()[1], init = FALSE) {

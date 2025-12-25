@@ -46,7 +46,7 @@ Arguments:
     <repo>...           Drat repository names
     <pkg>...            R package names"
 
-clir_version <- "v1.2.0"
+clir_version <- "v1.2.1"
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
