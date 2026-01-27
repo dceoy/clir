@@ -150,11 +150,11 @@ EOF
 echo
 
 echo '>>> Validate installed packages'
-${CLIR_ROOT}/bin/clir install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
+"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
 if [[ ${BIOCONDUCTOR} -ne 0 ]]; then
-  ${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
+  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
 else
-  ${CLIR_ROOT}/bin/clir validate ${DEBUG_FLAG} docopt yaml devtools drat
+  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat
 fi
 echo
 

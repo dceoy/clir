@@ -2,6 +2,10 @@
 ARG UBUNTU_VERSION=24.04
 FROM public.ecr.aws/docker/library/ubuntu:${UBUNTU_VERSION}
 
+ARG USER_NAME=ruser
+ARG USER_UID=1001
+ARG USER_GID=1001
+
 ENV DEBIAN_FRONTEND noninteractive
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
@@ -29,5 +33,11 @@ RUN \
       bash /mnt/host/install_clir.sh --root
 
 HEALTHCHECK NONE
+
+RUN \
+      groupadd --gid "${USER_GID}" "${USER_NAME}" \
+      && useradd --uid "${USER_UID}" --gid "${USER_GID}" --shell /bin/bash --create-home "${USER_NAME}"
+
+USER "${USER_NAME}"
 
 ENTRYPOINT ["/usr/local/bin/clir"]
