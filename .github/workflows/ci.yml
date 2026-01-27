@@ -22,13 +22,18 @@ on:
           - build
         description: Choose the workflow to run
         default: lint-and-test
+      r-version:
+        required: false
+        type: string
+        description: R version to use
+        default: release
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash -euox pipefail {0}
+    working-directory: .
 jobs:
-  test:
-    if: >
-      github.event_name == 'push'
-      || github.event_name == 'pull_request'
-      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
-    uses: ./.github/workflows/test.yml
   r-lint:
     if: >
       github.event_name == 'push'
@@ -37,7 +42,7 @@ jobs:
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main
     with:
       package-path: .
-      r-version: release
+      r-version: ${{ inputs.r-version || 'release' }}
       runs-on: ubuntu-latest
       r-libs-user: /usr/local/lib/R/site-library
       lint-package: false
@@ -48,9 +53,60 @@ jobs:
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-format-and-pr.yml@main
     with:
       package-path: .
-      r-version: release
+      r-version: ${{ inputs.r-version || 'release' }}
       runs-on: ubuntu-latest
       format-package: false
+  cli-test:
+    if: >
+      github.event_name == 'push'
+      || github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up R
+        uses: r-lib/actions/setup-r@6f6e5bc62fba3a704f74e7ad7ef7676c5c6a2590  # v2.11.4
+        with:
+          r-version: ${{ inputs.r-version || 'release' }}
+          use-public-rspm: true
+      - name: Set environment variables
+        run: |
+          {
+            echo "PATH=${HOME}/.clir/bin:${PATH}";
+            echo "R_LIBS_USER=${HOME}/.clir/r/library";
+          } >> "${GITHUB_ENV}"
+      - name: Install clir
+        run: |
+          ./install_clir.sh
+      - name: Test configuration
+        run: |
+          clir --version
+          clir config
+          clir cran --list
+          clir cran https://cran.ism.ac.jp/
+          clir drat dmlc
+          clir config
+          clir config --init
+      - name: Test installation
+        run: |
+          clir update
+          clir install foreach doParallel tidyverse
+          clir install --devt=cran foreach doParallel tidyverse
+          clir validate foreach doParallel tidyverse
+          clir session foreach doParallel tidyverse
+      - name: Test uninstallation
+        run: |
+          clir uninstall foreach doSNOW
+          [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
+          [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
+      - name: Test downloading
+        run: |
+          clir download tidyverse gridExtra
+          ls -l tidyverse* gridExtra*
   docker-build-and-push:
     if: >
       github.event_name == 'push'
@@ -61,6 +117,7 @@ jobs:
       )
     needs:
       - r-lint
+      - cli-test
     uses: dceoy/gh-actions-for-devops/.github/workflows/docker-build-and-push.yml@main
     with:
       registry: docker.io
@@ -77,7 +134,7 @@ jobs:
       github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
     needs:
       - r-lint
-      - test
+      - cli-test
     uses: dceoy/gh-actions-for-devops/.github/workflows/dependabot-auto-merge.yml@main
     with:
       unconditional: true
