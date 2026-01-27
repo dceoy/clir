@@ -39,6 +39,8 @@ jobs:
       github.event_name == 'push'
       || github.event_name == 'pull_request'
       || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
+    permissions:
+      contents: read
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-lint.yml@main  # zizmor: ignore[unpinned-uses]
     with:
       package-path: .
@@ -50,6 +52,9 @@ jobs:
     if: >
       github.event_name == 'pull_request'
       || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'format')
+    permissions:
+      contents: write
+      pull-requests: write
     uses: dceoy/gh-actions-for-devops/.github/workflows/r-package-format-and-pr.yml@main  # zizmor: ignore[unpinned-uses]
     with:
       package-path: .
@@ -118,6 +123,9 @@ jobs:
     needs:
       - r-lint
       - cli-test
+    permissions:
+      contents: write
+      packages: write
     uses: dceoy/gh-actions-for-devops/.github/workflows/docker-build-and-push.yml@main  # zizmor: ignore[unpinned-uses]
     with:
       registry: docker.io
@@ -135,6 +143,10 @@ jobs:
     needs:
       - r-lint
       - cli-test
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
     uses: dceoy/gh-actions-for-devops/.github/workflows/dependabot-auto-merge.yml@main  # zizmor: ignore[unpinned-uses]
     with:
       unconditional: true
