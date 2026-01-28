@@ -66,7 +66,7 @@ jobs:
       github.event_name == 'push'
       || github.event_name == 'pull_request'
       || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
-    runs-on: ubuntu-24.04
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -78,13 +78,6 @@ jobs:
         with:
           r-version: ${{ inputs.r-version || 'release' }}
           use-public-rspm: true
-      - name: Install system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install \
-            libcurl4-gnutls-dev libfontconfig1-dev libfreetype6-dev \
-            libfribidi-dev libharfbuzz-dev libgit2-dev libjpeg-dev libpng-dev \
-            libssl-dev libtiff5-dev libxml2-dev
       - name: Set environment variables
         run: |
           {
