@@ -85,17 +85,11 @@ $ docker image pull dceoy/clir
 
     ```sh
     # Ubuntu
-    $ sudo apt-get -y install git libcurl4-gnutls-dev libssl-dev libxml2-dev r-base
-
-    # CentOS
-    $ sudo yum -y install git libcurl-devel libxml2-devel openssl-devel R-devel
-
-    # Fedora
-    $ sudo dnf -y install git libcurl-devel libxml2-devel openssl-devel R-devel
+    $ sudo apt -y update
+    $ sudo apt -y install ca-certificates curl git r-base r-cran-devtools r-cran-docopt r-cran-yaml
 
     # macOS with Homebrew
-    $ brew tap homebrew/science
-    $ brew install curl git openssl r
+    $ brew install curl git r
     ```
 
 2.  Check out clir and run `install_clir.sh`.
