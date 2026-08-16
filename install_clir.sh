@@ -132,7 +132,7 @@ fi
 cat << EOF | R --vanilla -q || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
 bioc_install <- ${BIOCONDUCTOR};
-pkgs <- c('docopt', 'yaml', 'devtools', 'drat');
+pkgs <- c('docopt', 'yaml', 'devtools', 'drat', 'stringr');
 if (bioc_install != 0) {
   pkgs <- c(pkgs, 'BiocManager');
 }
@@ -150,11 +150,11 @@ EOF
 echo
 
 echo '>>> Validate installed packages'
-"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --devt=cran devtools docopt drat yaml
+"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --devt=cran devtools docopt drat stringr yaml
 if [[ ${BIOCONDUCTOR} -ne 0 ]]; then
-  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat BiocManager
+  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat stringr BiocManager
 else
-  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat
+  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat stringr
 fi
 echo
 
