@@ -1,5 +1,5 @@
 ---
-name: CI/CD
+name: CI
 on:
   push:
     branches:
@@ -19,7 +19,6 @@ on:
         options:
           - lint-and-test
           - format
-          - build
         description: Choose the workflow to run
         default: lint-and-test
       r-version:
@@ -112,32 +111,6 @@ jobs:
         run: |
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
-  docker-build-and-push:
-    if: >
-      github.event_name == 'push'
-      || (
-        github.event_name == 'workflow_dispatch'
-        && inputs.workflow == 'build'
-        && (! (failure() || cancelled()))
-      )
-    needs:
-      - r-lint
-      - cli-test
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-    uses: dceoy/gha-for-devops/.github/workflows/docker-build-and-push.yml@main  # zizmor: ignore[unpinned-uses]
-    with:
-      registry: docker.io
-      registry-user: ${{ github.repository_owner }}
-      image-name: ${{ github.repository }}
-      platforms: linux/amd64,linux/arm64
-      context: .
-      file: ./Dockerfile
-      push: true
-    secrets:
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
   dependabot-auto-merge:
     if: >
       github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'

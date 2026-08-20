@@ -2,7 +2,7 @@
 
 R Package Installer for Command Line Interface
 
-[![CI/CD](https://github.com/dceoy/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/ci.yml)
+[![CI](https://github.com/dceoy/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/ci.yml)
 
 #### Supported versions
 
@@ -68,14 +68,6 @@ R Package Installer for Command Line Interface
   ```
 
 Run `clir --help` for information.
-
-## Docker image
-
-The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/clir/).
-
-```sh
-$ docker image pull dceoy/clir
-```
 
 ## Installation
 
