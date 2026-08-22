@@ -9,7 +9,7 @@ clir_root=$(realpath "$(dirname "${script_path}")/..")
 # starting R so the launcher and the installer use the same library. An
 # explicit R_LIBS_USER remains authoritative; when only R_LIBS is explicit,
 # keep R from inserting its synthesized user library ahead of it.
-if [[ -n "${R_LIBS_USER:-}" ]]; then
+if [[ -n "${R_LIBS_USER:-}" && "${R_LIBS_USER:-}" != 'NULL' ]]; then
   :
 elif [[ -n "${R_LIBS:-}" ]]; then
   export R_LIBS_USER='NULL'

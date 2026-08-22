@@ -102,7 +102,7 @@ function resolve_r_lib {
 }
 
 set +u
-if [[ -n "${R_LIBS_USER}" ]]; then
+if [[ -n "${R_LIBS_USER}" && "${R_LIBS_USER}" != 'NULL' ]]; then
   export R_LIBS_USER
 elif [[ -n "${R_LIBS}" ]]; then
   # Prevent R from synthesizing a higher-priority R_LIBS_USER path.

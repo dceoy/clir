@@ -69,7 +69,7 @@ local({
 
   generic_config <- file.path(root, "generic.yml")
   yaml::write_yaml(
-    list(repos = c(
+    list(repos = list(
       CRAN = "https://example.invalid/cran",
       INTERNAL = "https://example.invalid/internal"
     )),
@@ -114,6 +114,43 @@ local({
     installed_pkgs = c("alpha", "beta")
   )
   stopifnot(identical(captured$pkg, c("alpha", "beta")))
+  stopifnot(identical(captured$upgrade, TRUE))
+
+  fake_installed <- function(...) {
+    structure(
+      matrix(nrow = 4L, ncol = 0L),
+      dimnames = list(c("alpha", "beta", "gamma", "delta"), NULL)
+    )
+  }
+  fake_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = c(
+        NA,
+        "github::owner/beta",
+        "git::https://example.invalid/gamma.git",
+        NA
+      ),
+      repotype = c("cran", NA, NA, "bioc"),
+      stringsAsFactors = FALSE
+    )
+  }
+  update_pkgs(
+    repos = c(CRAN = requested_repo),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = fake_status,
+    installed_fn = fake_installed
+  )
+  stopifnot(identical(
+    captured$pkg,
+    c(
+      "alpha",
+      "github::owner/beta",
+      "git::https://example.invalid/gamma.git",
+      "bioc::delta"
+    )
+  ))
   stopifnot(identical(captured$upgrade, TRUE))
 
   managed_file <- file.path(versioned, "package-file")

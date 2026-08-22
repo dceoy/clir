@@ -33,6 +33,13 @@ env -u R_LIBS_USER -u R_LIBS \
   "${cli}" --version
 grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
 
+env -u R_LIBS \
+  R_LIBS_USER='NULL' \
+  CLIR_TEST_RECORD="${launcher_record}" \
+  PATH="${fake_bin}:${PATH}" \
+  "${cli}" --version
+grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
+
 explicit_user="${test_root}/explicit-user"
 env -u R_LIBS \
   R_LIBS_USER="${explicit_user}" \

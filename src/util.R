@@ -193,7 +193,7 @@ normalize_repos <- function(config) {
 }
 
 normalize_config <- function(config) {
-  list(repos = normalize_repos(config))
+  list(repos = as.list(normalize_repos(config)))
 }
 
 read_config <- function(clir_yml) {
@@ -295,11 +295,59 @@ install_pkgs <- function(pkgs, repos, r_lib = .libPaths()[1L],
   invisible(result)
 }
 
+installed_package_refs <- function(status, fallback = character()) {
+  if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
+    return(fallback)
+  }
+  packages <- status[["package"]]
+  if (is.null(packages)) {
+    return(fallback)
+  }
+  packages <- as.character(packages)
+  refs <- packages
+  remote_refs <- status[["remotepkgref"]]
+  if (!is.null(remote_refs)) {
+    remote_refs <- as.character(remote_refs)
+    use_remote <- !is.na(remote_refs) & nzchar(remote_refs)
+    refs[use_remote] <- remote_refs[use_remote]
+  } else {
+    use_remote <- rep(FALSE, length(refs))
+  }
+  repotypes <- status[["repotype"]]
+  if (!is.null(repotypes)) {
+    bioc <- !is.na(repotypes) & tolower(as.character(repotypes)) == "bioc"
+    refs[bioc & !use_remote] <- paste0("bioc::", packages[bioc & !use_remote])
+  }
+  refs <- refs[!is.na(refs) & nzchar(refs)]
+  if (length(refs) == 0L) fallback else refs
+}
+
 update_pkgs <- function(repos, r_lib = .libPaths()[1L],
                         depend = NA, quiet = FALSE,
-                        pkg_install = NULL, installed_pkgs = NULL) {
+                        pkg_install = NULL, installed_pkgs = NULL,
+                        status_fn = NULL, installed_fn = installed.packages) {
   if (is.null(installed_pkgs)) {
-    installed_pkgs <- rownames(installed.packages(lib.loc = r_lib))
+    if (!is.function(installed_fn)) {
+      stop("installed_fn must be a function.")
+    }
+    installed_names <- rownames(installed_fn(lib.loc = r_lib))
+    if (length(installed_names) > 0L) {
+      if (is.null(status_fn)) {
+        if (!requireNamespace("pak", quietly = TRUE)) {
+          stop("The pak package is required for package status.")
+        }
+        status_fn <- pak::pkg_status
+      }
+      if (!is.function(status_fn)) {
+        stop("status_fn must be a function.")
+      }
+      installed_pkgs <- installed_package_refs(
+        status_fn(pkg = installed_names, lib = r_lib),
+        fallback = installed_names
+      )
+    } else {
+      installed_pkgs <- installed_names
+    }
   }
   if (length(installed_pkgs) == 0L) {
     message("No packages are installed in the clir library.")
