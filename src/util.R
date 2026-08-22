@@ -218,6 +218,16 @@ reset_clir_library <- function(target, clir_root_dir,
   invisible(TRUE)
 }
 
+repo_fallback_names <- function(n) {
+  if (n == 0L) {
+    return(character())
+  }
+  c(
+    "CRAN",
+    if (n > 1L) paste0("repository", seq_len(n - 1L)) else character()
+  )
+}
+
 normalize_repos <- function(config) {
   if (is.null(config) || !is.list(config)) {
     config <- list()
@@ -246,12 +256,12 @@ normalize_repos <- function(config) {
     repo_names <- names(repos)
   }
 
-  if (is.null(repo_names)) {
+  if (is.null(repo_names) || length(repo_names) != length(repos)) {
     repo_names <- rep("", length(repos))
   }
   missing_names <- is.na(repo_names) | !nzchar(repo_names)
   if (any(missing_names)) {
-    replacements <- c("CRAN", paste0("repository", seq_len(max(0L, length(repos) - 1L))))
+    replacements <- repo_fallback_names(length(repos))
     repo_names[missing_names] <- replacements[seq_len(sum(missing_names))]
   }
   repo_names[tolower(repo_names) == "cran"] <- "CRAN"
@@ -312,18 +322,12 @@ add_config <- function(new, key, clir_yml) {
 
   config <- normalize_config(read_config(clir_yml))
   if (key %in% c("repos", "cran_urls")) {
-    if (is.null(new_names)) {
-      new_names <- c(
-        "CRAN",
-        paste0("repository", seq_len(max(0L, length(new) - 1L)))
-      )
+    if (is.null(new_names) || length(new_names) != length(new)) {
+      new_names <- repo_fallback_names(length(new))
     } else {
       missing_names <- is.na(new_names) | !nzchar(new_names)
       if (any(missing_names)) {
-        replacements <- c(
-          "CRAN",
-          paste0("repository", seq_len(max(0L, length(new) - 1L)))
-        )
+        replacements <- repo_fallback_names(length(new))
         new_names[missing_names] <- replacements[seq_len(sum(missing_names))]
       }
       new_names[tolower(new_names) == "cran"] <- "CRAN"
@@ -364,6 +368,45 @@ is_plain_package_ref <- function(ref) {
   grepl("^[A-Za-z][A-Za-z0-9.]*$", ref)
 }
 
+installed_standard_package_refs <- function(status) {
+  if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
+    return(character())
+  }
+  packages <- status[["package"]]
+  if (is.null(packages)) {
+    return(character())
+  }
+  packages <- as.character(packages)
+  remote_refs <- status[["remotepkgref"]]
+  use_remote <- if (is.null(remote_refs)) {
+    rep(FALSE, length(packages))
+  } else {
+    remote_refs <- as.character(remote_refs)
+    !is.na(remote_refs) & nzchar(remote_refs)
+  }
+  repotypes <- status[["repotype"]]
+  if (is.null(repotypes)) {
+    repotypes <- rep(NA_character_, length(packages))
+  }
+  repotypes <- tolower(as.character(repotypes))
+  repositories <- status[["repository"]]
+  if (is.null(repositories)) {
+    repositories <- rep(NA_character_, length(packages))
+  }
+  repositories <- as.character(repositories)
+  standard <- !use_remote & repotypes %in% c("cran", "standard")
+  if (!any(standard)) {
+    return(character())
+  }
+  refs <- paste0("standard::", packages[standard])
+  cran <- standard & (
+    is.na(repositories) |
+      !nzchar(repositories) |
+      tolower(repositories) %in% c("cran", "@cran@")
+  )
+  unique(c(refs, paste0("cran::", packages[cran])))
+}
+
 filter_installed_pkgs <- function(pkgs, r_lib, installed_fn,
                                   status_fn = NULL) {
   if (!is.function(installed_fn)) {
@@ -379,12 +422,11 @@ filter_installed_pkgs <- function(pkgs, r_lib, installed_fn,
     if (!is.function(status_fn)) {
       stop("status_fn must be a function.")
     }
+    status <- status_fn(pkg = installed_names, lib = r_lib)
     installed_refs <- c(
       installed_refs,
-      installed_package_refs(
-        status_fn(pkg = installed_names, lib = r_lib),
-        fallback = installed_names
-      )
+      installed_standard_package_refs(status),
+      installed_package_refs(status, fallback = installed_names)
     )
   }
   requested_names <- package_ref_name(pkgs)
@@ -470,10 +512,84 @@ installed_package_refs <- function(status, fallback = character()) {
   if (length(refs) == 0L) fallback else refs
 }
 
+repository_identity <- function(value) {
+  value <- tolower(trimws(as.character(value)))
+  sub("/+$", "", value)
+}
+
+merge_update_repos <- function(repos, status) {
+  if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
+    return(repos)
+  }
+  repositories <- status[["repository"]]
+  if (is.null(repositories)) {
+    return(repos)
+  }
+  repositories <- as.character(repositories)
+  packages <- status[["package"]]
+  if (is.null(packages)) {
+    return(repos)
+  }
+  remote_refs <- status[["remotepkgref"]]
+  use_remote <- if (is.null(remote_refs)) {
+    rep(FALSE, length(repositories))
+  } else {
+    remote_refs <- as.character(remote_refs)
+    !is.na(remote_refs) & nzchar(remote_refs)
+  }
+  repotypes <- status[["repotype"]]
+  if (is.null(repotypes)) {
+    repotypes <- rep(NA_character_, length(repositories))
+  }
+  repotypes <- tolower(as.character(repotypes))
+  standard <- !use_remote & (
+    repotypes %in% c("cran", "standard") | is.na(repotypes)
+  )
+  sources <- repositories[
+    standard & !is.na(repositories) & nzchar(repositories) &
+      !tolower(repositories) %in% c("cran", "@cran@")
+  ]
+  sources <- unique(sources)
+  if (length(sources) == 0L) {
+    return(repos)
+  }
+
+  repos <- as.character(repos)
+  repo_names <- names(repos)
+  if (is.null(repo_names) || length(repo_names) != length(repos)) {
+    repo_names <- repo_fallback_names(length(repos))
+  }
+  for (source in sources) {
+    source_key <- repository_identity(source)
+    matches <- which(
+      repository_identity(repo_names) == source_key |
+        repository_identity(repos) == source_key
+    )
+    if (length(matches) == 0L) {
+      new_name <- "repository1"
+      while (new_name %in% repo_names) {
+        new_name <- paste0(
+          "repository",
+          as.integer(sub("^repository", "", new_name)) + 1L
+        )
+      }
+      repos <- c(source, repos)
+      repo_names <- c(new_name, repo_names)
+      matches <- 1L
+    }
+    order <- c(matches, setdiff(seq_along(repos), matches))
+    repos <- repos[order]
+    repo_names <- repo_names[order]
+  }
+  names(repos) <- repo_names
+  repos
+}
+
 update_pkgs <- function(repos, r_lib = .libPaths()[1L],
                         depend = NA, quiet = FALSE,
                         pkg_install = NULL, installed_pkgs = NULL,
                         status_fn = NULL, installed_fn = installed.packages) {
+  status <- NULL
   if (is.null(installed_pkgs)) {
     if (!is.function(installed_fn)) {
       stop("installed_fn must be a function.")
@@ -489,10 +605,12 @@ update_pkgs <- function(repos, r_lib = .libPaths()[1L],
       if (!is.function(status_fn)) {
         stop("status_fn must be a function.")
       }
+      status <- status_fn(pkg = installed_names, lib = r_lib)
       installed_pkgs <- installed_package_refs(
-        status_fn(pkg = installed_names, lib = r_lib),
+        status,
         fallback = installed_names
       )
+      repos <- merge_update_repos(repos, status)
     } else {
       installed_pkgs <- installed_names
     }

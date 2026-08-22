@@ -161,7 +161,7 @@ local({
 
   captured <- NULL
   fake_pkg_install <- function(...) {
-    captured <<- list(...)
+    captured <<- c(list(repos = getOption("repos")), list(...))
     invisible(NULL)
   }
   refs <- c(
@@ -230,6 +230,38 @@ local({
     stopifnot(identical(captured$upgrade, FALSE))
   }
 
+  standard_reference_cases <- list(
+    cran = list(reference = "cran::alpha", expected = character()),
+    standard = list(reference = "standard::alpha", expected = character()),
+    versioned = list(
+      reference = "cran::alpha@1.0",
+      expected = "cran::alpha@1.0"
+    ),
+    reinstall = list(
+      reference = "standard::alpha=?reinstall",
+      expected = "standard::alpha=?reinstall"
+    )
+  )
+  ordinary_cran_status <- function(...) {
+    data.frame(
+      package = "alpha",
+      remotepkgref = NA_character_,
+      repotype = "cran",
+      repository = "CRAN",
+      stringsAsFactors = FALSE
+    )
+  }
+  for (case_name in names(standard_reference_cases)) {
+    reference_case <- standard_reference_cases[[case_name]]
+    filtered <- filter_installed_pkgs(
+      pkgs = reference_case$reference,
+      r_lib = explicit,
+      installed_fn = no_upgrade_inventory,
+      status_fn = ordinary_cran_status
+    )
+    stopifnot(identical(unname(filtered), reference_case$expected))
+  }
+
   update_pkgs(
     repos = c(CRAN = requested_repo),
     r_lib = explicit,
@@ -246,6 +278,7 @@ local({
     )
   }
   fake_status <- function(pkg, lib) {
+    custom_repo <- "https://example.invalid/internal"
     data.frame(
       package = pkg,
       remotepkgref = c(
@@ -255,6 +288,7 @@ local({
         NA
       ),
       repotype = c("cran", NA, NA, "bioc"),
+      repository = c(custom_repo, NA, NA, NA),
       stringsAsFactors = FALSE
     )
   }
@@ -273,6 +307,10 @@ local({
       "git::https://example.invalid/gamma.git",
       "bioc::delta"
     )
+  ))
+  stopifnot(identical(
+    unname(captured$repos)[[1L]],
+    "https://example.invalid/internal"
   ))
   stopifnot(identical(captured$upgrade, TRUE))
 

@@ -111,22 +111,21 @@ grep -Fq 'repos' "${test_root}/r/clir.yml"
 run_cli cran https://example.invalid/cran >/dev/null
 grep -Fq 'https://example.invalid/cran' "${test_root}/r/clir.yml"
 
-if run_cli drat example >/dev/null 2>&1; then
-  echo 'removed drat command was accepted' >&2
-  exit 1
-fi
-if run_cli install --devt=cran example >/dev/null 2>&1; then
-  echo 'removed --devt option was accepted' >&2
-  exit 1
-fi
-if run_cli install --bioc example >/dev/null 2>&1; then
-  echo 'removed --bioc option was accepted' >&2
-  exit 1
-fi
+assert_parser_rejects() {
+  local expected output
+  expected=${1}
+  shift
+  if output=$(run_cli "$@" 2>&1); then
+    echo "parser accepted removed interface: $*" >&2
+    exit 1
+  fi
+  grep -Fq 'Usage:' <<<"${output}"
+  grep -Fq -- "${expected}" <<<"${output}"
+}
 
-if run_cli --invalid-option >/dev/null 2>&1; then
-  echo 'invalid option was accepted' >&2
-  exit 1
-fi
+assert_parser_rejects 'drat' drat example
+assert_parser_rejects '--devt' install --devt=cran example
+assert_parser_rejects '--bioc' install --bioc example
+assert_parser_rejects '--invalid-option' --invalid-option
 
 echo 'All CLI tests passed.'
