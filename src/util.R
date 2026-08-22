@@ -580,16 +580,14 @@ status_package_refs <- function(status) {
     repositories <- rep(NA_character_, length(refs))
   }
   repositories <- as.character(repositories)
+  cran_repositories <- !is.na(repositories) &
+    tolower(repositories) %in% c("cran", "@cran@")
   cran <- !use_remote &
-    (
-      repotypes %in% c("cran", "standard") |
-        (!is.na(repositories) &
-          tolower(repositories) %in% c("cran", "@cran@"))
-    ) &
+    (repotypes %in% c("cran", "standard") | cran_repositories) &
     (
       is.na(repositories) |
         !nzchar(repositories) |
-        tolower(repositories) %in% c("cran", "@cran@")
+        cran_repositories
     )
   refs[cran] <- paste0("cran::", packages[cran])
   bioc <- !is.na(repotypes) & repotypes == "bioc"
