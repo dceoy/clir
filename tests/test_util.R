@@ -72,6 +72,23 @@ local({
       normalizePath(token_case$expected, mustWork = FALSE)
     ))
   }
+  stopifnot(identical(
+    expand_r_library_tokens("%U|%S", r_version = "4.3.2"),
+    paste(
+      r_default_user_library("4.3.2"),
+      r_default_site_library(),
+      sep = "|"
+    )
+  ))
+  r_lib_token <- file.path(root, "r-library-%v")
+  stopifnot(identical(
+    resolve_r_library(
+      root,
+      r_version = "4.3.2",
+      env = c(R_LIBS_USER = "NULL", R_LIBS = r_lib_token)
+    ),
+    normalizePath(r_lib_token, mustWork = FALSE)
+  ))
   explicit_r_lib <- file.path(root, "explicit-r-library")
   stopifnot(identical(
     resolve_r_library(
@@ -114,6 +131,16 @@ local({
   stopifnot(identical(
     load_repos(named_config)[["INTERNAL"]],
     "https://example.invalid/internal"
+  ))
+  multiple_config <- file.path(root, "multiple.yml")
+  multiple_repos <- c(
+    "https://example.invalid/first",
+    "https://example.invalid/second"
+  )
+  add_config(multiple_repos, key = "repos", clir_yml = multiple_config)
+  stopifnot(identical(
+    load_repos(multiple_config),
+    c(CRAN = multiple_repos[[1L]], repository1 = multiple_repos[[2L]])
   ))
 
   generic_config <- file.path(root, "generic.yml")

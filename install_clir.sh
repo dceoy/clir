@@ -93,7 +93,8 @@ function resolve_r_lib {
     paths <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
     paths <- paths[nzchar(paths) & paths != "NULL"];
     path <- strsplit(paths[1], .Platform$path.sep, fixed = TRUE)[[1]][1];
-    # R expands all supported library conversion specifiers at startup.
+    # R expands conversion specifiers for R_LIBS_USER and R_LIBS_SITE at startup;
+    # R_LIBS remains literal, matching the documented behavior.
     cat(path.expand(path));
   '
 }

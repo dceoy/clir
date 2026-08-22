@@ -17,25 +17,69 @@ default_r_library <- function(clir_root_dir, r_version = getRversion()) {
   file.path(root, "r", r_major_minor(r_version), "library")
 }
 
+r_default_user_library <- function(r_version = getRversion()) {
+  system_info <- Sys.info()
+  home <- normalizePath("~", mustWork = FALSE)
+  if (
+    identical(.Platform$OS.type, "windows") &&
+      identical(system_info[["machine"]], "x86-64")
+  ) {
+    file.path(
+      Sys.getenv("LOCALAPPDATA"),
+      "R",
+      "win-library",
+      r_major_minor(r_version)
+    )
+  } else if (identical(.Platform$OS.type, "windows")) {
+    file.path(
+      Sys.getenv("LOCALAPPDATA"),
+      "R",
+      paste0(system_info[["machine"]], "-library"),
+      r_major_minor(r_version)
+    )
+  } else if (identical(system_info[["sysname"]], "Darwin")) {
+    file.path(
+      home,
+      "Library",
+      "R",
+      system_info[["machine"]],
+      r_major_minor(r_version),
+      "library"
+    )
+  } else {
+    file.path(
+      home,
+      "R",
+      paste0(R.version$platform, "-library"),
+      r_major_minor(r_version)
+    )
+  }
+}
+
+r_default_site_library <- function() {
+  file.path(R.home(), "site-library")
+}
+
 expand_r_library_tokens <- function(path, r_version = getRversion()) {
   if (length(path) != 1L || is.na(path)) {
     stop("path must be one non-missing value.")
   }
-  values <- c(
-    "%V" = as.character(r_version),
-    "%v" = r_major_minor(r_version),
-    "%p" = R.version$platform,
-    "%o" = R.version$os,
-    "%a" = R.version$arch,
-    "%U" = Sys.getenv("R_LIBS_USER"),
-    "%S" = Sys.getenv("R_LIBS_SITE")
-  )
-  placeholder <- "\u0001"
-  path <- gsub("%%", placeholder, path, fixed = TRUE)
-  for (token in names(values)) {
-    path <- gsub(token, values[[token]], path, fixed = TRUE)
+  version <- as.character(r_version)
+  expand <- function(value, spec, expansion) {
+    replacement <- sprintf(
+      "\\1\\2%s",
+      gsub("([\\])", "\\\\\\1", expansion)
+    )
+    gsub(paste0("(^|[^%])(%%)*%", spec), replacement, value)
   }
-  gsub(placeholder, "%", path, fixed = TRUE)
+  path <- expand(path, "V", version)
+  path <- expand(path, "v", r_major_minor(r_version))
+  path <- expand(path, "p", R.version$platform)
+  path <- expand(path, "a", R.version$arch)
+  path <- expand(path, "o", R.version$os)
+  path <- expand(path, "U", r_default_user_library(r_version))
+  path <- expand(path, "S", r_default_site_library())
+  gsub("%%", "%", path, fixed = TRUE)
 }
 
 resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
@@ -61,8 +105,11 @@ resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
   if (length(overrides) > 0L) {
     # R accepts a path list in these variables. The first entry is the
     # library used by clir, matching .libPaths()[[1]].
+    override_name <- names(overrides)[[1L]]
     path <- strsplit(overrides[[1L]], .Platform$path.sep, fixed = TRUE)[[1L]][1L]
-    path <- expand_r_library_tokens(path, r_version = r_version)
+    if (identical(override_name, "R_LIBS_USER")) {
+      path <- expand_r_library_tokens(path, r_version = r_version)
+    }
     return(normalizePath(path.expand(path), mustWork = FALSE))
   }
 
@@ -266,9 +313,19 @@ add_config <- function(new, key, clir_yml) {
   config <- normalize_config(read_config(clir_yml))
   if (key %in% c("repos", "cran_urls")) {
     if (is.null(new_names)) {
-      new_names <- rep("CRAN", length(new))
+      new_names <- c(
+        "CRAN",
+        paste0("repository", seq_len(max(0L, length(new) - 1L)))
+      )
     } else {
-      new_names[is.na(new_names) | !nzchar(new_names)] <- "CRAN"
+      missing_names <- is.na(new_names) | !nzchar(new_names)
+      if (any(missing_names)) {
+        replacements <- c(
+          "CRAN",
+          paste0("repository", seq_len(max(0L, length(new) - 1L)))
+        )
+        new_names[missing_names] <- replacements[seq_len(sum(missing_names))]
+      }
       new_names[tolower(new_names) == "cran"] <- "CRAN"
     }
     names(new) <- new_names

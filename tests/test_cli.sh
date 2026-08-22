@@ -40,11 +40,21 @@ cp "${repo_root}/bin/clir" "${probe_root}/bin/clir"
 probe_version=$(R --vanilla --slave -e 'cat(paste(R.version$major, strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."))')
 probe_library="${probe_root}/r/${probe_version}/library"
 mkdir -p "${probe_library}"
+probe_library=$(realpath "${probe_library}")
 cat >"${probe_root}/src/clir.R" <<'EOF'
-cat(.libPaths()[[1]], "\n")
+expected <- normalizePath(Sys.getenv("CLIR_EXPECTED_LIBRARY"), mustWork = FALSE)
+paths <- normalizePath(.libPaths(), mustWork = FALSE)
+if (!identical(Sys.getenv("R_LIBS_USER"), expected)) {
+  stop(sprintf("R_LIBS_USER was %s, expected %s", Sys.getenv("R_LIBS_USER"), expected))
+}
+if (!(expected %in% paths)) {
+  stop(sprintf("managed library %s is absent from .libPaths(): %s", expected, paste(paths, collapse = ", ")))
+}
+cat(paths[[1L]], "\n")
 EOF
-probe_result=$(env -u R_LIBS_USER -u R_LIBS "${probe_root}/bin/clir" --version)
-[[ "${probe_result}" = "${probe_library}" ]]
+env -u R_LIBS_USER -u R_LIBS \
+  CLIR_EXPECTED_LIBRARY="${probe_library}" \
+  "${probe_root}/bin/clir" --version
 
 env -u R_LIBS \
   R_LIBS_USER='NULL' \
