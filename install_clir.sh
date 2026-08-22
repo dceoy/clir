@@ -93,10 +93,7 @@ function resolve_r_lib {
     paths <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
     paths <- paths[nzchar(paths) & paths != "NULL"];
     path <- strsplit(paths[1], .Platform$path.sep, fixed = TRUE)[[1]][1];
-    path <- gsub("%V", as.character(getRversion()),
-      gsub("%v", paste(R.version$major,
-        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."),
-        path, fixed = TRUE), fixed = TRUE);
+    # R expands all supported library conversion specifiers at startup.
     cat(path.expand(path));
   '
 }

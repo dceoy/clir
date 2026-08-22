@@ -18,12 +18,24 @@ default_r_library <- function(clir_root_dir, r_version = getRversion()) {
 }
 
 expand_r_library_tokens <- function(path, r_version = getRversion()) {
-  version <- as.character(r_version)
-  gsub(
-    "%V", version,
-    gsub("%v", r_major_minor(r_version), path, fixed = TRUE),
-    fixed = TRUE
+  if (length(path) != 1L || is.na(path)) {
+    stop("path must be one non-missing value.")
+  }
+  values <- c(
+    "%V" = as.character(r_version),
+    "%v" = r_major_minor(r_version),
+    "%p" = R.version$platform,
+    "%o" = R.version$os,
+    "%a" = R.version$arch,
+    "%U" = Sys.getenv("R_LIBS_USER"),
+    "%S" = Sys.getenv("R_LIBS_SITE")
   )
+  placeholder <- "\u0001"
+  path <- gsub("%%", placeholder, path, fixed = TRUE)
+  for (token in names(values)) {
+    path <- gsub(token, values[[token]], path, fixed = TRUE)
+  }
+  gsub(placeholder, "%", path, fixed = TRUE)
 }
 
 resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
@@ -291,6 +303,10 @@ package_ref_name <- function(ref) {
   sub("\\.git$", "", ref)
 }
 
+is_plain_package_ref <- function(ref) {
+  grepl("^[A-Za-z][A-Za-z0-9.]*$", ref)
+}
+
 filter_installed_pkgs <- function(pkgs, r_lib, installed_fn,
                                   status_fn = NULL) {
   if (!is.function(installed_fn)) {
@@ -315,7 +331,11 @@ filter_installed_pkgs <- function(pkgs, r_lib, installed_fn,
     )
   }
   requested_names <- package_ref_name(pkgs)
-  keep <- !(requested_names %in% installed_names | pkgs %in% installed_refs)
+  plain_refs <- is_plain_package_ref(pkgs)
+  keep <- !(
+    (plain_refs & requested_names %in% installed_names) |
+      pkgs %in% installed_refs
+  )
   pkgs[keep]
 }
 

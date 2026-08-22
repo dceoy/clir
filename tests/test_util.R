@@ -41,15 +41,37 @@ local({
     ),
     normalizePath(explicit, mustWork = FALSE)
   ))
-  tokenized <- file.path(root, "library-%v")
-  stopifnot(identical(
-    resolve_r_library(
-      root,
-      r_version = "4.3.2",
-      env = c(R_LIBS_USER = tokenized, R_LIBS = "")
+  token_cases <- list(
+    version = list(
+      path = file.path(root, "library-%v-%V"),
+      expected = file.path(root, "library-4.3-4.3.2")
     ),
-    normalizePath(file.path(root, "library-4.3"), mustWork = FALSE)
-  ))
+    runtime = list(
+      path = file.path(root, "library-%p-%o-%a-%%"),
+      expected = file.path(
+        root,
+        paste(
+          "library",
+          R.version$platform,
+          R.version$os,
+          R.version$arch,
+          "%",
+          sep = "-"
+        )
+      )
+    )
+  )
+  for (case_name in names(token_cases)) {
+    token_case <- token_cases[[case_name]]
+    stopifnot(identical(
+      resolve_r_library(
+        root,
+        r_version = "4.3.2",
+        env = c(R_LIBS_USER = token_case$path, R_LIBS = "")
+      ),
+      normalizePath(token_case$expected, mustWork = FALSE)
+    ))
+  }
   explicit_r_lib <- file.path(root, "explicit-r-library")
   stopifnot(identical(
     resolve_r_library(
@@ -151,6 +173,35 @@ local({
   )
   stopifnot(identical(captured$pkg, "gamma"))
   stopifnot(identical(captured$upgrade, FALSE))
+
+  reference_cases <- list(
+    qualified = "cran::alpha",
+    versioned = "alpha@1.0",
+    remote = "owner/alpha@main",
+    reinstall = "alpha=?reinstall",
+    archive = "url::https://example.invalid/alpha.tar.gz"
+  )
+  for (case_name in names(reference_cases)) {
+    reference <- reference_cases[[case_name]]
+    install_pkgs(
+      reference,
+      repos = c(CRAN = requested_repo),
+      r_lib = explicit,
+      upgrade = FALSE,
+      pkg_install = fake_pkg_install,
+      installed_fn = no_upgrade_inventory,
+      status_fn = function(...) {
+        data.frame(
+          package = "alpha",
+          remotepkgref = "github::owner/alpha",
+          repotype = "github",
+          stringsAsFactors = FALSE
+        )
+      }
+    )
+    stopifnot(identical(captured$pkg, reference))
+    stopifnot(identical(captured$upgrade, FALSE))
+  }
 
   update_pkgs(
     repos = c(CRAN = requested_repo),

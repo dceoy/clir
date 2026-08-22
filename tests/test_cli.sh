@@ -33,6 +33,19 @@ env -u R_LIBS_USER -u R_LIBS \
   "${cli}" --version
 grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
 
+probe_root="${test_root}/default-library-probe"
+mkdir -p "${probe_root}/bin" "${probe_root}/src"
+cp "${repo_root}/bin/clir" "${probe_root}/bin/clir"
+# shellcheck disable=SC2016
+probe_version=$(R --vanilla --slave -e 'cat(paste(R.version$major, strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."))')
+probe_library="${probe_root}/r/${probe_version}/library"
+mkdir -p "${probe_library}"
+cat >"${probe_root}/src/clir.R" <<'EOF'
+cat(.libPaths()[[1]], "\n")
+EOF
+probe_result=$(env -u R_LIBS_USER -u R_LIBS "${probe_root}/bin/clir" --version)
+[[ "${probe_result}" = "${probe_library}" ]]
+
 env -u R_LIBS \
   R_LIBS_USER='NULL' \
   CLIR_TEST_RECORD="${launcher_record}" \
@@ -76,7 +89,12 @@ run_cli() {
 }
 
 run_cli --version | grep -Fq 'v1.2.1'
-run_cli --help | grep -Fq 'pak'
+help_output=$(run_cli --help)
+grep -Fq 'pak' <<<"${help_output}"
+if grep -Eq 'drat|--devt|--bioc' <<<"${help_output}"; then
+  echo 'removed interfaces remain in the CLI help' >&2
+  exit 1
+fi
 run_cli config --init >"${test_root}/config.out"
 grep -Fq 'repos' "${test_root}/r/clir.yml"
 
