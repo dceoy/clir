@@ -113,6 +113,17 @@ local({
   reset_clir_library(versioned, root, r_version = "4.3.2")
   stopifnot(!dir.exists(versioned))
 
+  dir.create(versioned, recursive = TRUE)
+  expect_error(reset_clir_library(
+    versioned,
+    root,
+    r_version = "4.3.2",
+    unlink_fn = function(...) 1L
+  ))
+  stopifnot(dir.exists(versioned))
+  reset_clir_library(versioned, root, r_version = "4.3.2")
+  stopifnot(!dir.exists(versioned))
+
   outside <- tempfile("clir-outside-")
   dir.create(outside, recursive = TRUE)
   expect_error(reset_clir_library(outside, root, r_version = "4.3.2"))

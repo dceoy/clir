@@ -1,1 +1,28 @@
-../src/clir.R
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_path=$(realpath "${BASH_SOURCE[0]}")
+clir_root=$(realpath "$(dirname "${script_path}")/..")
+
+# R synthesizes R_LIBS_USER during startup. Set the managed default before
+# starting R so the launcher and the installer use the same library. An
+# explicit R_LIBS_USER remains authoritative; when only R_LIBS is explicit,
+# keep R from inserting its synthesized user library ahead of it.
+if [[ -n "${R_LIBS_USER:-}" ]]; then
+  :
+elif [[ -n "${R_LIBS:-}" ]]; then
+  export R_LIBS_USER=''
+else
+  # shellcheck disable=SC2016
+  r_version=$(R --vanilla --slave -e '
+    cat(paste(
+      R.version$major,
+      strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+      sep = "."
+    ))
+  ')
+  export R_LIBS_USER="${clir_root}/r/${r_version}/library"
+fi
+
+exec Rscript "${clir_root}/src/clir.R" "$@"

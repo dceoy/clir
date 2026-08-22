@@ -46,7 +46,15 @@ Run `clir --help` for the complete command reference.
 
 ## Installation
 
-Install R and Git, then check out clir and run the installer:
+Install R and Git. On Debian or Ubuntu, install the libcurl development
+headers used when pak builds its dependencies from source:
+
+```sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends -y libcurl4-openssl-dev
+```
+
+Then check out clir and run the installer:
 
 ```sh
 git clone https://github.com/dceoy/clir.git ~/.clir
@@ -63,13 +71,15 @@ Add the clir `bin` directory to `PATH` after installation. `install_clir.sh --he
 
 ## Libraries and configuration
 
-When neither `R_LIBS_USER` nor `R_LIBS` is set, clir uses an R-version-aware library:
+When neither `R_LIBS_USER` nor `R_LIBS` is set, the `bin/clir` launcher sets
+an R-version-aware library before R starts:
 
 ```text
 ~/.clir/r/<R-major>.<R-minor>/library
 ```
 
-For example, R 4.3 uses `~/.clir/r/4.3/library`. Explicit `R_LIBS_USER` and `R_LIBS` values remain authoritative.
+For example, R 4.3 uses `~/.clir/r/4.3/library`. Explicit `R_LIBS_USER` and
+`R_LIBS` values remain authoritative across invocations.
 The installer option `--delete-r-lib` can reset only the current versioned library below the clir-managed `r`
 directory. It rejects external paths, the managed root, and symlinked targets.
 

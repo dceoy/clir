@@ -9,31 +9,81 @@ trap 'rm -rf "${test_root}"' EXIT
 mkdir -p "${test_root}/bin" "${test_root}/src"
 cp "${repo_root}/src/clir.R" "${test_root}/src/clir.R"
 cp "${repo_root}/src/util.R" "${test_root}/src/util.R"
-ln -s ../src/clir.R "${test_root}/bin/clir"
+cp "${repo_root}/bin/clir" "${test_root}/bin/clir"
+chmod +x "${test_root}/bin/clir"
 
 cli="${test_root}/bin/clir"
-Rscript "${cli}" --version | grep -Fq 'v1.2.1'
-Rscript "${cli}" --help | grep -Fq 'pak'
-Rscript "${cli}" config --init >"${test_root}/config.out"
+fake_bin="${test_root}/fake-bin"
+mkdir -p "${fake_bin}"
+cat >"${fake_bin}/R" <<'EOF'
+#!/usr/bin/env bash
+printf '4.3'
+EOF
+cat >"${fake_bin}/Rscript" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "${R_LIBS_USER-UNSET}" >"${CLIR_TEST_RECORD}"
+printf '%s\n' "${R_LIBS-UNSET}" >>"${CLIR_TEST_RECORD}"
+EOF
+chmod +x "${fake_bin}/R" "${fake_bin}/Rscript"
+
+launcher_record="${test_root}/launcher-env"
+env -u R_LIBS_USER -u R_LIBS \
+  CLIR_TEST_RECORD="${launcher_record}" \
+  PATH="${fake_bin}:${PATH}" \
+  "${cli}" --version
+grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
+
+explicit_user="${test_root}/explicit-user"
+env -u R_LIBS \
+  R_LIBS_USER="${explicit_user}" \
+  CLIR_TEST_RECORD="${launcher_record}" \
+  PATH="${fake_bin}:${PATH}" \
+  "${cli}" --version
+grep -Fxq "${explicit_user}" "${launcher_record}"
+
+explicit_r_lib="${test_root}/explicit-r"
+env -u R_LIBS_USER \
+  R_LIBS="${explicit_r_lib}" \
+  CLIR_TEST_RECORD="${launcher_record}" \
+  PATH="${fake_bin}:${PATH}" \
+  "${cli}" --version
+[[ -z "$(sed -n '1p' "${launcher_record}")" ]]
+[[ "$(sed -n '2p' "${launcher_record}")" = "${explicit_r_lib}" ]]
+
+if [[ -n "${R_LIBS_USER:-}" ]]; then
+  cli_env=("R_LIBS_USER=${R_LIBS_USER}")
+elif [[ -n "${R_LIBS:-}" ]]; then
+  cli_env=("R_LIBS=${R_LIBS}")
+else
+  runtime_r_lib=$(R --vanilla --slave -e 'cat(.libPaths()[[1]])')
+  cli_env=("R_LIBS_USER=${runtime_r_lib}")
+fi
+run_cli() {
+  env "${cli_env[@]}" "${cli}" "${@}"
+}
+
+run_cli --version | grep -Fq 'v1.2.1'
+run_cli --help | grep -Fq 'pak'
+run_cli config --init >"${test_root}/config.out"
 grep -Fq 'repos' "${test_root}/r/clir.yml"
 
-Rscript "${cli}" cran https://example.invalid/cran >/dev/null
+run_cli cran https://example.invalid/cran >/dev/null
 grep -Fq 'https://example.invalid/cran' "${test_root}/r/clir.yml"
 
-if Rscript "${cli}" drat example >/dev/null 2>&1; then
+if run_cli drat example >/dev/null 2>&1; then
   echo 'removed drat command was accepted' >&2
   exit 1
 fi
-if Rscript "${cli}" install --devt=cran example >/dev/null 2>&1; then
+if run_cli install --devt=cran example >/dev/null 2>&1; then
   echo 'removed --devt option was accepted' >&2
   exit 1
 fi
-if Rscript "${cli}" install --bioc example >/dev/null 2>&1; then
+if run_cli install --bioc example >/dev/null 2>&1; then
   echo 'removed --bioc option was accepted' >&2
   exit 1
 fi
 
-if Rscript "${cli}" --invalid-option >/dev/null 2>&1; then
+if run_cli --invalid-option >/dev/null 2>&1; then
   echo 'invalid option was accepted' >&2
   exit 1
 fi

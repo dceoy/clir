@@ -112,7 +112,11 @@ path_components <- function(path) {
 }
 
 reset_clir_library <- function(target, clir_root_dir,
-                               r_version = getRversion()) {
+                               r_version = getRversion(),
+                               unlink_fn = unlink) {
+  if (!is.function(unlink_fn)) {
+    stop("unlink_fn must be a function.")
+  }
   root <- normalizePath(path.expand(clir_root_dir), mustWork = FALSE)
   target_input <- path.expand(target)
   expected_input <- default_r_library(root, r_version = r_version)
@@ -139,7 +143,10 @@ reset_clir_library <- function(target, clir_root_dir,
     stop("Refusing to reset a non-directory clir library path.")
   }
 
-  unlink(target, recursive = TRUE, force = TRUE)
+  status <- unlink_fn(target, recursive = TRUE, force = TRUE)
+  if (!isTRUE(status == 0L)) {
+    stop("Failed to reset the clir library.")
+  }
   invisible(TRUE)
 }
 

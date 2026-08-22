@@ -100,30 +100,26 @@ function resolve_r_lib {
   '
 }
 
-if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
-  set +u
-  if [[ -n "${R_LIBS_USER}" ]]; then
-    export R_LIBS_USER
-    LIB_DIR=$(resolve_r_lib)
-  elif [[ -n "${R_LIBS}" ]]; then
-    export R_LIBS
-    LIB_DIR=$(resolve_r_lib)
-  else
-    # shellcheck disable=SC2016
-    R_VERSION=$(R --vanilla --slave -e '
-      cat(paste(
-        R.version$major,
-        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
-        sep = "."
-      ))
-    ')
-    export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
-    LIB_DIR="${R_LIBS_USER}"
-  fi
-  set -u
+set +u
+if [[ -n "${R_LIBS_USER}" ]]; then
+  export R_LIBS_USER
+elif [[ -n "${R_LIBS}" ]]; then
+  # Prevent R from synthesizing a higher-priority R_LIBS_USER path.
+  export R_LIBS
+  export R_LIBS_USER=''
 else
-  LIB_DIR=$(R --vanilla --slave -e 'cat(.libPaths()[[1]])')
+  # shellcheck disable=SC2016
+  R_VERSION=$(R --vanilla --slave -e '
+    cat(paste(
+      R.version$major,
+      strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+      sep = "."
+    ))
+  ')
+  export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
 fi
+set -u
+LIB_DIR=$(resolve_r_lib)
 
 if [[ -n "${CLIR_SOURCE_DIR:-}" ]]; then
   [[ -f "${CLIR_ROOT}/src/clir.R" ]] || abort "clir source not found: ${CLIR_ROOT}"
@@ -156,10 +152,9 @@ if [[ ${DELETE_R_LIB} -ne 0 ]]; then
 fi
 
 echo '>>> Install dependencies'
-if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
-  [[ -d "${LIB_DIR}" ]] || mkdir -p "${LIB_DIR}"
-else
-  ln -sf "${CLIR_ROOT}/src/clir.R" /usr/local/bin/clir
+mkdir -p "${LIB_DIR}"
+if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
+  ln -sf "${CLIR_ROOT}/bin/clir" /usr/local/bin/clir
 fi
 cat << EOF | R --vanilla -q || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
