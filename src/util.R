@@ -36,10 +36,12 @@ resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
     return(normalizePath(path.expand(r_lib), mustWork = FALSE))
   }
 
+  env_names <- names(env)
   env <- as.character(env)
-  if (is.null(names(env))) {
-    names(env) <- c("R_LIBS", "R_LIBS_USER")[seq_along(env)]
+  if (is.null(env_names)) {
+    env_names <- c("R_LIBS", "R_LIBS_USER")[seq_along(env)]
   }
+  names(env) <- env_names
   overrides <- env[c("R_LIBS", "R_LIBS_USER")]
   overrides <- overrides[
     !is.na(overrides) & nzchar(overrides) & overrides != "NULL"

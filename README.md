@@ -27,8 +27,9 @@ clir install git::https://example.com/packages/example.git
 clir update
 ```
 
-Only required package dependencies are installed by default. Use pak's package-reference parameters when a
-different dependency policy is needed.
+Only required package dependencies are installed by default. clir does not
+expose an option for installing Suggests or selecting a different dependency
+policy.
 
 Other commands are available for configuration and package maintenance:
 
