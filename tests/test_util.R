@@ -59,6 +59,23 @@ local({
     ),
     normalizePath(explicit_r_lib, mustWork = FALSE)
   ))
+  dual_r_lib <- file.path(root, "dual-r-library")
+  dual_user_lib <- file.path(root, "dual-user-library")
+  stopifnot(identical(
+    resolve_r_library(
+      root,
+      r_version = "4.3.2",
+      env = c(
+        R_LIBS_USER = dual_user_lib,
+        R_LIBS = paste(
+          dual_r_lib,
+          file.path(root, "secondary-r-library"),
+          sep = .Platform$path.sep
+        )
+      )
+    ),
+    normalizePath(dual_r_lib, mustWork = FALSE)
+  ))
 
   first_config <- file.path(root, "first.yml")
   requested_repo <- "https://example.invalid/cran"
@@ -66,6 +83,16 @@ local({
   stopifnot(identical(load_repos(first_config)[["CRAN"]], requested_repo))
   first_yaml <- yaml::read_yaml(first_config)
   stopifnot(identical(first_yaml[["repos"]][["CRAN"]], requested_repo))
+  named_config <- file.path(root, "named.yml")
+  add_config(
+    c(CRAN = requested_repo, INTERNAL = "https://example.invalid/internal"),
+    key = "repos",
+    clir_yml = named_config
+  )
+  stopifnot(identical(
+    load_repos(named_config)[["INTERNAL"]],
+    "https://example.invalid/internal"
+  ))
 
   generic_config <- file.path(root, "generic.yml")
   yaml::write_yaml(

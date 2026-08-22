@@ -28,7 +28,7 @@ expand_r_library_tokens <- function(path, r_version = getRversion()) {
 
 resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
                               r_lib = NULL,
-                              env = Sys.getenv(c("R_LIBS_USER", "R_LIBS"))) {
+                              env = Sys.getenv(c("R_LIBS", "R_LIBS_USER"))) {
   if (!is.null(r_lib)) {
     if (length(r_lib) != 1L || !nzchar(r_lib)) {
       stop("r_lib must be one non-empty path.")
@@ -38,9 +38,9 @@ resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
 
   env <- as.character(env)
   if (is.null(names(env))) {
-    names(env) <- c("R_LIBS_USER", "R_LIBS")[seq_along(env)]
+    names(env) <- c("R_LIBS", "R_LIBS_USER")[seq_along(env)]
   }
-  overrides <- env[c("R_LIBS_USER", "R_LIBS")]
+  overrides <- env[c("R_LIBS", "R_LIBS_USER")]
   overrides <- overrides[
     !is.na(overrides) & nzchar(overrides) & overrides != "NULL"
   ]
@@ -168,13 +168,18 @@ normalize_repos <- function(config) {
   if (is.list(repos)) {
     repos <- unlist(repos, use.names = TRUE)
   }
+  repo_names <- names(repos)
   repos <- as.character(repos)
-  repos <- repos[!is.na(repos) & nzchar(repos)]
+  valid <- !is.na(repos) & nzchar(repos)
+  repos <- repos[valid]
+  if (!is.null(repo_names)) {
+    repo_names <- repo_names[valid]
+  }
   if (length(repos) == 0L) {
     repos <- default_config$repos
+    repo_names <- names(repos)
   }
 
-  repo_names <- names(repos)
   if (is.null(repo_names)) {
     repo_names <- rep("", length(repos))
   }
@@ -228,15 +233,19 @@ print_config <- function(clir_yml, r_lib = NULL, init = FALSE) {
 }
 
 add_config <- function(new, key, clir_yml) {
+  new_names <- names(new)
   new <- as.character(new)
-  new <- new[!is.na(new) & nzchar(new)]
+  valid <- !is.na(new) & nzchar(new)
+  new <- new[valid]
+  if (!is.null(new_names)) {
+    new_names <- new_names[valid]
+  }
   if (length(new) == 0L) {
     stop("At least one configuration value must be passed.")
   }
 
   config <- normalize_config(read_config(clir_yml))
   if (key %in% c("repos", "cran_urls")) {
-    new_names <- names(new)
     if (is.null(new_names)) {
       new_names <- rep("CRAN", length(new))
     } else {
