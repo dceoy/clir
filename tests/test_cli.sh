@@ -47,7 +47,7 @@ env -u R_LIBS_USER \
   CLIR_TEST_RECORD="${launcher_record}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
-[[ -z "$(sed -n '1p' "${launcher_record}")" ]]
+[[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = "${explicit_r_lib}" ]]
 
 if [[ -n "${R_LIBS_USER:-}" ]]; then

@@ -50,13 +50,22 @@ local({
     ),
     normalizePath(file.path(root, "library-4.3"), mustWork = FALSE)
   ))
+  explicit_r_lib <- file.path(root, "explicit-r-library")
+  stopifnot(identical(
+    resolve_r_library(
+      root,
+      r_version = "4.3.2",
+      env = c(R_LIBS_USER = "NULL", R_LIBS = explicit_r_lib)
+    ),
+    normalizePath(explicit_r_lib, mustWork = FALSE)
+  ))
 
   first_config <- file.path(root, "first.yml")
   requested_repo <- "https://example.invalid/cran"
   add_config(requested_repo, key = "cran_urls", clir_yml = first_config)
   stopifnot(identical(load_repos(first_config)[["CRAN"]], requested_repo))
   first_yaml <- yaml::read_yaml(first_config)
-  stopifnot(identical(first_yaml$repos$CRAN, requested_repo))
+  stopifnot(identical(first_yaml[["repos"]][["CRAN"]], requested_repo))
 
   generic_config <- file.path(root, "generic.yml")
   yaml::write_yaml(

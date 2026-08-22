@@ -12,7 +12,7 @@ clir_root=$(realpath "$(dirname "${script_path}")/..")
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   :
 elif [[ -n "${R_LIBS:-}" ]]; then
-  export R_LIBS_USER=''
+  export R_LIBS_USER='NULL'
 else
   # shellcheck disable=SC2016
   r_version=$(R --vanilla --slave -e '

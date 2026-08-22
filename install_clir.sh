@@ -91,7 +91,8 @@ function resolve_r_lib {
   # shellcheck disable=SC2016
   R --vanilla --slave -e '
     paths <- Sys.getenv(c("R_LIBS_USER", "R_LIBS"));
-    path <- strsplit(paths[nzchar(paths)][1], .Platform$path.sep, fixed = TRUE)[[1]][1];
+    paths <- paths[nzchar(paths) & paths != "NULL"];
+    path <- strsplit(paths[1], .Platform$path.sep, fixed = TRUE)[[1]][1];
     path <- gsub("%V", as.character(getRversion()),
       gsub("%v", paste(R.version$major,
         strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."),
@@ -106,7 +107,7 @@ if [[ -n "${R_LIBS_USER}" ]]; then
 elif [[ -n "${R_LIBS}" ]]; then
   # Prevent R from synthesizing a higher-priority R_LIBS_USER path.
   export R_LIBS
-  export R_LIBS_USER=''
+  export R_LIBS_USER='NULL'
 else
   # shellcheck disable=SC2016
   R_VERSION=$(R --vanilla --slave -e '

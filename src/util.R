@@ -41,7 +41,9 @@ resolve_r_library <- function(clir_root_dir, r_version = getRversion(),
     names(env) <- c("R_LIBS_USER", "R_LIBS")[seq_along(env)]
   }
   overrides <- env[c("R_LIBS_USER", "R_LIBS")]
-  overrides <- overrides[!is.na(overrides) & nzchar(overrides)]
+  overrides <- overrides[
+    !is.na(overrides) & nzchar(overrides) & overrides != "NULL"
+  ]
   if (length(overrides) > 0L) {
     # R accepts a path list in these variables. The first entry is the
     # library used by clir, matching .libPaths()[[1]].
