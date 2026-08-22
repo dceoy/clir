@@ -153,6 +153,17 @@ local({
       repository1 = "https://example.invalid/mixed"
     )
   ))
+  lowercase_mixed_repos <- c(
+    cran = requested_repo,
+    "https://example.invalid/lowercase-mixed"
+  )
+  stopifnot(identical(
+    normalize_repos(list(repos = lowercase_mixed_repos)),
+    c(
+      CRAN = requested_repo,
+      repository1 = "https://example.invalid/lowercase-mixed"
+    )
+  ))
   mixed_config <- file.path(root, "mixed.yml")
   add_config(mixed_repos, key = "repos", clir_yml = mixed_config)
   stopifnot(identical(
@@ -160,6 +171,30 @@ local({
     c(
       CRAN = requested_repo,
       repository1 = "https://example.invalid/mixed"
+    )
+  ))
+  collision_config <- file.path(root, "collision.yml")
+  yaml::write_yaml(
+    list(repos = list(
+      CRAN = requested_repo,
+      repository1 = "https://example.invalid/existing"
+    )),
+    collision_config
+  )
+  add_config(
+    c(
+      "https://example.invalid/new-cran",
+      "https://example.invalid/new-internal"
+    ),
+    key = "repos",
+    clir_yml = collision_config
+  )
+  stopifnot(identical(
+    load_repos(collision_config),
+    c(
+      CRAN = "https://example.invalid/new-cran",
+      repository2 = "https://example.invalid/new-internal",
+      repository1 = "https://example.invalid/existing"
     )
   ))
 
@@ -329,6 +364,16 @@ local({
       installed = "github::owner/alpha",
       expected = character()
     ),
+    trailing_url = list(
+      reference = "https://github.com/owner/alpha/",
+      installed = "github::owner/alpha",
+      expected = character()
+    ),
+    release_url = list(
+      reference = "https://github.com/owner/alpha/releases/tag/v1.0",
+      installed = "github::owner/alpha@v1.0",
+      expected = character()
+    ),
     versioned = list(
       reference = "owner/alpha@main",
       installed = "github::owner/alpha@main",
@@ -407,6 +452,10 @@ local({
   stopifnot(identical(
     captured$repos,
     c(CRAN = requested_repo)
+  ))
+  stopifnot(!identical(
+    repository_identity("https://example.invalid/Stable/"),
+    repository_identity("https://example.invalid/stable")
   ))
   stopifnot(identical(captured$upgrade, TRUE))
 
@@ -504,6 +553,37 @@ local({
   stopifnot(identical(
     unname(calls_by_pkg[["beta"]]$repos)[[1L]],
     repo_b
+  ))
+
+  mixed_group_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = rep(NA_character_, length(pkg)),
+      repotype = c(NA, "cran"),
+      repository = c(repo_a, "CRAN"),
+      stringsAsFactors = FALSE
+    )
+  }
+  captured_calls <- list()
+  update_pkgs(
+    repos = c(CRAN = requested_repo, A = repo_a),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = mixed_group_status,
+    installed_fn = two_repo_installed
+  )
+  calls_by_pkg <- setNames(captured_calls, vapply(
+    captured_calls,
+    function(call) call$pkg,
+    character(1)
+  ))
+  stopifnot(identical(
+    unname(calls_by_pkg[["alpha"]]$repos)[[1L]],
+    repo_a
+  ))
+  stopifnot(identical(
+    unname(calls_by_pkg[["beta"]]$repos)[[1L]],
+    requested_repo
   ))
 
   managed_file <- file.path(versioned, "package-file")

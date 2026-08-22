@@ -224,14 +224,14 @@ repo_fallback_names <- function(n, existing = character()) {
   }
   existing <- as.character(existing)
   existing <- existing[!is.na(existing) & nzchar(existing)]
-  used <- existing
+  used <- tolower(existing)
   result <- character(n)
   for (index in seq_len(n)) {
-    if (index == 1L && !"CRAN" %in% used) {
+    if (index == 1L && !"cran" %in% used) {
       candidate <- "CRAN"
     } else {
       candidate <- "repository1"
-      while (candidate %in% used) {
+      while (tolower(candidate) %in% used) {
         candidate <- paste0(
           "repository",
           as.integer(sub("^repository", "", candidate)) + 1L
@@ -239,7 +239,7 @@ repo_fallback_names <- function(n, existing = character()) {
       }
     }
     result[[index]] <- candidate
-    used <- c(used, candidate)
+    used <- c(used, tolower(candidate))
   }
   result
 }
@@ -288,7 +288,7 @@ normalize_repos <- function(config) {
     repo_names <- names(repos)
   }
   names(repos) <- repo_names
-  repos[!duplicated(names(repos))]
+  repos[!duplicated(tolower(names(repos)))]
 }
 
 normalize_config <- function(config) {
@@ -340,22 +340,27 @@ add_config <- function(new, key, clir_yml) {
 
   config <- normalize_config(read_config(clir_yml))
   if (key %in% c("repos", "cran_urls")) {
+    existing_names <- names(config$repos)
+    existing_names <- existing_names[tolower(existing_names) != "cran"]
     if (is.null(new_names) || length(new_names) != length(new)) {
-      new_names <- repo_fallback_names(length(new))
+      new_names <- repo_fallback_names(
+        length(new),
+        existing = existing_names
+      )
     } else {
       missing_names <- is.na(new_names) | !nzchar(new_names)
       if (any(missing_names)) {
         new_names[missing_names] <- repo_fallback_names(
           sum(missing_names),
-          existing = new_names[!missing_names]
+          existing = c(existing_names, new_names[!missing_names])
         )
       }
       new_names[tolower(new_names) == "cran"] <- "CRAN"
     }
     names(new) <- new_names
-    new <- new[!duplicated(names(new))]
+    new <- new[!duplicated(tolower(names(new)))]
     repos <- c(new, config$repos)
-    config <- list(repos = repos[!duplicated(names(repos))])
+    config <- list(repos = repos[!duplicated(tolower(names(repos)))])
   } else {
     old <- read_config(clir_yml)[[key]]
     config[[key]] <- unique(c(new, as.character(old)))
@@ -435,13 +440,18 @@ canonical_ref <- function(ref) {
     return(ref)
   }
   if (grepl("^github::", ref, ignore.case = TRUE)) {
-    return(paste0("github::", sub("^github::", "", ref, ignore.case = TRUE)))
+    ref <- sub("^github::", "", ref, ignore.case = TRUE)
+    ref <- sub("/+$", "", ref)
+    return(paste0("github::", ref))
   }
   if (grepl("^https?://github\\.com/", ref, ignore.case = TRUE)) {
     ref <- sub("^https?://github\\.com/", "", ref, ignore.case = TRUE)
+    ref <- sub("/+$", "", ref)
+    ref <- sub("/releases/tag/", "@", ref, fixed = TRUE)
     ref <- sub("/(tree|commit)/", "@", ref)
     ref <- sub("/pull/", "#", ref)
     ref <- sub("\\.git$", "", ref)
+    ref <- sub("/+$", "", ref)
     return(paste0("github::", ref))
   }
   if (grepl("^git@github\\.com:", ref, ignore.case = TRUE)) {
@@ -572,7 +582,7 @@ installed_package_refs <- function(status, fallback = character()) {
 }
 
 repository_identity <- function(value) {
-  value <- tolower(trimws(as.character(value)))
+  value <- trimws(as.character(value))
   sub("/+$", "", value)
 }
 
@@ -613,16 +623,28 @@ merge_update_repos <- function(repos, status) {
     return(repos)
   }
 
-  repos <- as.character(repos)
   repo_names <- names(repos)
+  repos <- as.character(repos)
   if (is.null(repo_names) || length(repo_names) != length(repos)) {
     repo_names <- repo_fallback_names(length(repos))
   }
   for (source in sources) {
     source_key <- repository_identity(source)
+    source_is_url <- grepl(
+      "^(?:[[:alnum:]][[:alnum:].+-]*://|git@)",
+      source,
+      perl = TRUE
+    )
+    name_matches <- if (source_is_url) {
+      !is.na(repo_names) & repository_identity(repo_names) == source_key
+    } else {
+      !is.na(repo_names) &
+        tolower(trimws(repo_names)) == tolower(trimws(source))
+    }
+    value_matches <- !is.na(repos) &
+      repository_identity(repos) == source_key
     matches <- which(
-      repository_identity(repo_names) == source_key |
-        repository_identity(repos) == source_key
+      name_matches | value_matches
     )
     if (length(matches) == 0L) {
       next
@@ -695,7 +717,6 @@ update_pkgs <- function(repos, r_lib = .libPaths()[1L],
         status,
         fallback = installed_names
       )
-      repos <- merge_update_repos(repos, status)
     } else {
       installed_pkgs <- installed_names
     }
