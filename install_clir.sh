@@ -157,11 +157,13 @@ mkdir -p "${LIB_DIR}"
 if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
   ln -sf "${CLIR_ROOT}/bin/clir" /usr/local/bin/clir
 fi
-cat << EOF | R --vanilla -q || abort 'Package installation failed.'
-options(repos = c(CRAN = '${CRAN_URL}'));
+CLIR_CRAN_URL="${CRAN_URL}" CLIR_REINSTALL="${REINSTALL}" \
+  R --vanilla -q <<'EOF' || abort 'Package installation failed.'
+options(repos = c(CRAN = Sys.getenv("CLIR_CRAN_URL")));
 pkgs <- c('docopt', 'yaml', 'pak');
+reinstall <- identical(Sys.getenv("CLIR_REINSTALL"), "1");
 for (p in pkgs) {
-  if ((${REINSTALL} != 0) || (!requireNamespace(p, quietly = TRUE))) {
+  if (reinstall || (!requireNamespace(p, quietly = TRUE))) {
     install.packages(
       pkgs = p,
       lib = .libPaths()[[1]],

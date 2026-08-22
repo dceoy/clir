@@ -134,6 +134,24 @@ local({
   stopifnot(identical(captured$dependencies, NA))
   stopifnot(identical(captured$ask, FALSE))
 
+  no_upgrade_inventory <- function(...) {
+    structure(
+      matrix(nrow = 2L, ncol = 0L),
+      dimnames = list(c("alpha", "beta"), NULL)
+    )
+  }
+  install_pkgs(
+    c("alpha", "gamma"),
+    repos = c(CRAN = requested_repo),
+    r_lib = explicit,
+    upgrade = FALSE,
+    pkg_install = fake_pkg_install,
+    installed_fn = no_upgrade_inventory,
+    status_fn = function(...) NULL
+  )
+  stopifnot(identical(captured$pkg, "gamma"))
+  stopifnot(identical(captured$upgrade, FALSE))
+
   update_pkgs(
     repos = c(CRAN = requested_repo),
     r_lib = explicit,
@@ -196,6 +214,22 @@ local({
   stopifnot(dir.exists(versioned))
   reset_clir_library(versioned, root, r_version = "4.3.2")
   stopifnot(!dir.exists(versioned))
+
+  wild_root <- file.path(root, "clir*")
+  wild_sibling_root <- file.path(root, "clir-sibling")
+  dir.create(wild_root, recursive = TRUE)
+  dir.create(wild_sibling_root, recursive = TRUE)
+  wild_library <- default_r_library(wild_root, r_version = "4.3.2")
+  wild_sibling_library <- default_r_library(
+    wild_sibling_root,
+    r_version = "4.3.2"
+  )
+  dir.create(wild_library, recursive = TRUE)
+  dir.create(wild_sibling_library, recursive = TRUE)
+  writeLines("keep", file.path(wild_sibling_library, "keep.txt"))
+  reset_clir_library(wild_library, wild_root, r_version = "4.3.2")
+  stopifnot(!dir.exists(wild_library))
+  stopifnot(file.exists(file.path(wild_sibling_library, "keep.txt")))
 
   outside <- tempfile("clir-outside-")
   dir.create(outside, recursive = TRUE)

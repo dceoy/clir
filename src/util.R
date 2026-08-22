@@ -147,7 +147,12 @@ reset_clir_library <- function(target, clir_root_dir,
     stop("Refusing to reset a non-directory clir library path.")
   }
 
-  status <- unlink_fn(target, recursive = TRUE, force = TRUE)
+  status <- unlink_fn(
+    target,
+    recursive = TRUE,
+    force = TRUE,
+    expand = FALSE
+  )
   if (!isTRUE(status == 0L)) {
     stop("Failed to reset the clir library.")
   }
@@ -276,9 +281,48 @@ print_cran_mirrors <- function(https = TRUE) {
   }
 }
 
+package_ref_name <- function(ref) {
+  ref <- as.character(ref)
+  ref <- sub("^[^:]+::", "", ref)
+  ref <- sub("@[^/@]+$", "", ref)
+  ref <- sub("[?#].*$", "", ref)
+  ref <- sub("/+$", "", ref)
+  ref <- basename(ref)
+  sub("\\.git$", "", ref)
+}
+
+filter_installed_pkgs <- function(pkgs, r_lib, installed_fn,
+                                  status_fn = NULL) {
+  if (!is.function(installed_fn)) {
+    stop("installed_fn must be a function.")
+  }
+  installed_names <- rownames(installed_fn(lib.loc = r_lib))
+  if (length(installed_names) == 0L) {
+    return(pkgs)
+  }
+
+  installed_refs <- installed_names
+  if (!is.null(status_fn)) {
+    if (!is.function(status_fn)) {
+      stop("status_fn must be a function.")
+    }
+    installed_refs <- c(
+      installed_refs,
+      installed_package_refs(
+        status_fn(pkg = installed_names, lib = r_lib),
+        fallback = installed_names
+      )
+    )
+  }
+  requested_names <- package_ref_name(pkgs)
+  keep <- !(requested_names %in% installed_names | pkgs %in% installed_refs)
+  pkgs[keep]
+}
+
 install_pkgs <- function(pkgs, repos, r_lib = .libPaths()[1L],
                          upgrade = TRUE, depend = NA, quiet = FALSE,
-                         pkg_install = NULL) {
+                         pkg_install = NULL, installed_fn = installed.packages,
+                         status_fn = NULL) {
   if (length(pkgs) == 0L) {
     stop("At least one package reference must be passed.")
   }
@@ -290,6 +334,22 @@ install_pkgs <- function(pkgs, repos, r_lib = .libPaths()[1L],
   }
   if (!is.function(pkg_install)) {
     stop("pkg_install must be a function.")
+  }
+
+  if (!upgrade) {
+    if (is.null(status_fn) && requireNamespace("pak", quietly = TRUE)) {
+      status_fn <- pak::pkg_status
+    }
+    pkgs <- filter_installed_pkgs(
+      pkgs = pkgs,
+      r_lib = r_lib,
+      installed_fn = installed_fn,
+      status_fn = status_fn
+    )
+    if (length(pkgs) == 0L) {
+      message("All requested packages are already installed.")
+      return(invisible(NULL))
+    }
   }
 
   options(repos = repos)
