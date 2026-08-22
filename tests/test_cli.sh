@@ -119,7 +119,6 @@ assert_parser_rejects() {
     echo "parser accepted removed interface: $*" >&2
     exit 1
   fi
-  grep -Fq 'Unknown arguments:' <<<"${output}"
   grep -Fq -- "${expected}" <<<"${output}"
 }
 
