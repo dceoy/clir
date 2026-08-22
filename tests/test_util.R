@@ -383,6 +383,21 @@ local({
       reference = "git::https://github.com/owner/alpha",
       installed = "github::owner/alpha",
       expected = "git::https://github.com/owner/alpha"
+    ),
+    named = list(
+      reference = "mypkg=github::owner/alpha",
+      installed = "github::owner/alpha",
+      expected = character()
+    ),
+    named_git = list(
+      reference = "mypkg=git::https://example.invalid/alpha.git",
+      installed = "git::https://example.invalid/alpha.git",
+      expected = character()
+    ),
+    named_reinstall = list(
+      reference = "mypkg=github::owner/alpha?reinstall",
+      installed = "github::owner/alpha",
+      expected = "mypkg=github::owner/alpha?reinstall"
     )
   )
   for (case_name in names(github_reference_cases)) {
@@ -443,7 +458,7 @@ local({
   stopifnot(identical(
     captured$pkg,
     c(
-      "alpha",
+      "cran::alpha",
       "github::owner/beta",
       "git::https://example.invalid/gamma.git",
       "bioc::delta"
@@ -559,7 +574,7 @@ local({
     data.frame(
       package = pkg,
       remotepkgref = rep(NA_character_, length(pkg)),
-      repotype = c(NA, "cran"),
+      repotype = c(NA, NA),
       repository = c(repo_a, "CRAN"),
       stringsAsFactors = FALSE
     )
@@ -582,7 +597,7 @@ local({
     repo_a
   ))
   stopifnot(identical(
-    unname(calls_by_pkg[["beta"]]$repos)[[1L]],
+    unname(calls_by_pkg[["cran::beta"]]$repos)[[1L]],
     requested_repo
   ))
 

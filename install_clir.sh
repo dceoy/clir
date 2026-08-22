@@ -87,15 +87,57 @@ R --version || abort 'R is not found.'
 git --version || abort 'Git is not found.'
 echo
 
+function read_r_library_env {
+  local startup_mode="${1:-}"
+  if [[ "${startup_mode}" = '--vanilla' ]]; then
+    # shellcheck disable=SC2016
+    R --vanilla --slave -e '
+      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
+    '
+  else
+    # shellcheck disable=SC2016
+    R --no-save --no-restore --no-echo --slave -e '
+      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
+    '
+  fi
+}
+
+function use_r_startup_library {
+  local separator=$'\034'
+  local startup_env vanilla_env
+  local startup_r_libs startup_r_libs_user
+  local vanilla_r_libs vanilla_r_libs_user
+  startup_env=$(read_r_library_env)
+  vanilla_env=$(read_r_library_env --vanilla)
+  startup_r_libs="${startup_env%%"${separator}"*}"
+  startup_r_libs_user="${startup_env#*"${separator}"}"
+  vanilla_r_libs="${vanilla_env%%"${separator}"*}"
+  vanilla_r_libs_user="${vanilla_env#*"${separator}"}"
+
+  if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
+    "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
+    export R_LIBS="${startup_r_libs}"
+    export R_LIBS_USER='NULL'
+    return 0
+  fi
+  if [[ -n "${startup_r_libs_user}" &&
+    "${startup_r_libs_user}" != 'NULL' &&
+    "${startup_r_libs_user}" != "${vanilla_r_libs_user}" ]]; then
+    export R_LIBS_USER="${startup_r_libs_user}"
+    return 0
+  fi
+  return 1
+}
+
 function resolve_r_lib {
+  # R expands R_LIBS_USER conversion specifiers during normal startup.
   # shellcheck disable=SC2016
-  R --vanilla --slave -e '
+  R --no-save --no-restore --no-echo --slave -e '
     paths <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
     paths <- paths[nzchar(paths) & paths != "NULL"];
-    path <- strsplit(paths[1], .Platform$path.sep, fixed = TRUE)[[1]][1];
-    # R expands conversion specifiers for R_LIBS_USER and R_LIBS_SITE at startup;
-    # R_LIBS remains literal, matching the documented behavior.
-    cat(path.expand(path));
+    if (length(paths) == 0L) stop("No R library path is configured.");
+    path <- strsplit(paths[[1L]], .Platform$path.sep, fixed = TRUE)[[1L]][[1L]];
+    cat(normalizePath(path.expand(path), mustWork = FALSE));
   '
 }
 
@@ -106,6 +148,8 @@ elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
   # Prevent R from synthesizing a higher-priority R_LIBS_USER path.
   export R_LIBS
   export R_LIBS_USER='NULL'
+elif use_r_startup_library; then
+  :
 else
   # shellcheck disable=SC2016
   R_VERSION=$(R --vanilla --slave -e '
@@ -156,7 +200,7 @@ if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
   ln -sf "${CLIR_ROOT}/bin/clir" /usr/local/bin/clir
 fi
 CLIR_CRAN_URL="${CRAN_URL}" CLIR_REINSTALL="${REINSTALL}" \
-  R --vanilla -q <<'EOF' || abort 'Package installation failed.'
+  R --no-save --no-restore --no-echo -q <<'EOF' || abort 'Package installation failed.'
 options(repos = c(CRAN = Sys.getenv("CLIR_CRAN_URL")));
 pkgs <- c('docopt', 'yaml', 'pak');
 reinstall <- identical(Sys.getenv("CLIR_REINSTALL"), "1");

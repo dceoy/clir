@@ -86,6 +86,71 @@ env -u R_LIBS_USER \
 [[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = "${explicit_r_lib}" ]]
 
+installer_root="${test_root}/installer-source"
+installer_fake_bin="${test_root}/installer-fake-bin"
+installer_env_library="${test_root}/renviron-library"
+installer_managed_library="${installer_root}/r/4.3/library"
+installer_default_library="${test_root}/default-user-library"
+installer_marker="${test_root}/installed-marker"
+mkdir -p "${installer_root}/bin" "${installer_root}/src" "${installer_fake_bin}"
+cp "${repo_root}/install_clir.sh" "${installer_root}/install_clir.sh"
+cp "${repo_root}/bin/clir" "${installer_root}/bin/clir"
+cp "${repo_root}/src/clir.R" "${installer_root}/src/clir.R"
+cp "${repo_root}/src/util.R" "${installer_root}/src/util.R"
+chmod +x "${installer_root}/install_clir.sh" "${installer_root}/bin/clir"
+printf 'R_LIBS_USER=%s\n' "${installer_env_library}" >"${test_root}/.Renviron"
+cat >"${installer_fake_bin}/R" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" = '--version' ]]; then
+  printf 'R version 4.3.0\n'
+  exit 0
+fi
+args=" $* "
+if [[ "${args}" = *' -e '* ]]; then
+  if [[ "${args}" = *'R.version'* ]]; then
+    printf '4.3'
+  elif [[ "${args}" = *'collapse'* ]]; then
+    if [[ "${args}" = *'--vanilla'* ]]; then
+      printf '\034%s' "${CLIR_TEST_DEFAULT_LIBRARY}"
+    else
+      printf '\034%s' "${CLIR_TEST_ENV_LIBRARY}"
+    fi
+  elif [[ "${args}" = *'paths <-'* && "${args}" = *'--vanilla'* ]]; then
+    printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
+  elif [[ "${args}" = *'paths <-'* ]]; then
+    printf '%s' "${CLIR_TEST_ENV_LIBRARY}"
+  elif [[ "${args}" = *'--vanilla'* ]]; then
+    printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
+  else
+    printf '%s' "${CLIR_TEST_ENV_LIBRARY}"
+  fi
+elif [[ "${args}" = *'--vanilla'* ]]; then
+  touch "${CLIR_TEST_MANAGED_MARKER}"
+else
+  touch "${CLIR_TEST_ENV_MARKER}"
+fi
+EOF
+cat >"${installer_fake_bin}/Rscript" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "${R_LIBS_USER:-}" = "${CLIR_TEST_ENV_LIBRARY}" ]]
+[[ -f "${CLIR_TEST_ENV_MARKER}" ]]
+EOF
+chmod +x "${installer_fake_bin}/R" "${installer_fake_bin}/Rscript"
+env -u R_LIBS_USER -u R_LIBS \
+CLIR_SOURCE_DIR="${installer_root}" \
+CLIR_TEST_ENV_LIBRARY="${installer_env_library}" \
+CLIR_TEST_MANAGED_LIBRARY="${installer_managed_library}" \
+CLIR_TEST_DEFAULT_LIBRARY="${installer_default_library}" \
+CLIR_TEST_ENV_MARKER="${installer_marker}" \
+CLIR_TEST_MANAGED_MARKER="${test_root}/managed-marker" \
+HOME="${test_root}" \
+PATH="${installer_fake_bin}:${PATH}" \
+  "${installer_root}/install_clir.sh"
+[[ -f "${installer_marker}" ]]
+[[ ! -e "${test_root}/managed-marker" ]]
+
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   cli_env=("R_LIBS_USER=${R_LIBS_USER}")
 elif [[ -n "${R_LIBS:-}" ]]; then

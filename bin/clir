@@ -9,10 +9,54 @@ clir_root=$(realpath "$(dirname "${script_path}")/..")
 # starting R so the launcher and the installer use the same library. An
 # explicit R_LIBS_USER remains authoritative; when only R_LIBS is explicit,
 # keep R from inserting its synthesized user library ahead of it.
+function read_r_library_env {
+  local startup_mode="${1:-}"
+  if [[ "${startup_mode}" = '--vanilla' ]]; then
+    # shellcheck disable=SC2016
+    R --vanilla --slave -e '
+      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
+    '
+  else
+    # shellcheck disable=SC2016
+    R --no-save --no-restore --no-echo --slave -e '
+      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
+    '
+  fi
+}
+
+function use_r_startup_library {
+  local separator=$'\034'
+  local startup_env vanilla_env
+  local startup_r_libs startup_r_libs_user
+  local vanilla_r_libs vanilla_r_libs_user
+  startup_env=$(read_r_library_env)
+  vanilla_env=$(read_r_library_env --vanilla)
+  startup_r_libs="${startup_env%%"${separator}"*}"
+  startup_r_libs_user="${startup_env#*"${separator}"}"
+  vanilla_r_libs="${vanilla_env%%"${separator}"*}"
+  vanilla_r_libs_user="${vanilla_env#*"${separator}"}"
+
+  if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
+    "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
+    export R_LIBS="${startup_r_libs}"
+    export R_LIBS_USER='NULL'
+    return 0
+  fi
+  if [[ -n "${startup_r_libs_user}" &&
+    "${startup_r_libs_user}" != 'NULL' &&
+    "${startup_r_libs_user}" != "${vanilla_r_libs_user}" ]]; then
+    export R_LIBS_USER="${startup_r_libs_user}"
+    return 0
+  fi
+  return 1
+}
+
 if [[ -n "${R_LIBS_USER:-}" && "${R_LIBS_USER:-}" != 'NULL' ]]; then
   :
 elif [[ -n "${R_LIBS:-}" && "${R_LIBS:-}" != 'NULL' ]]; then
   export R_LIBS_USER='NULL'
+elif use_r_startup_library; then
+  :
 else
   # shellcheck disable=SC2016
   r_version=$(R --vanilla --slave -e '

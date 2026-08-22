@@ -439,6 +439,9 @@ canonical_ref <- function(ref) {
   if (length(ref) != 1L || is.na(ref) || !nzchar(ref)) {
     return(ref)
   }
+  if (grepl("^[A-Za-z][A-Za-z0-9.]*=", ref)) {
+    return(canonical_ref(sub("^[A-Za-z][A-Za-z0-9.]*=", "", ref)))
+  }
   if (grepl("^github::", ref, ignore.case = TRUE)) {
     ref <- sub("^github::", "", ref, ignore.case = TRUE)
     ref <- sub("/+$", "", ref)
@@ -568,10 +571,32 @@ status_package_refs <- function(status) {
     use_remote <- rep(FALSE, length(refs))
   }
   repotypes <- status[["repotype"]]
-  if (!is.null(repotypes)) {
-    bioc <- !is.na(repotypes) & tolower(as.character(repotypes)) == "bioc"
-    refs[bioc & !use_remote] <- paste0("bioc::", packages[bioc & !use_remote])
+  if (is.null(repotypes)) {
+    repotypes <- rep(NA_character_, length(refs))
   }
+  repotypes <- tolower(as.character(repotypes))
+  repositories <- status[["repository"]]
+  if (is.null(repositories)) {
+    repositories <- rep(NA_character_, length(refs))
+  }
+  repositories <- as.character(repositories)
+  cran <- !use_remote &
+    (
+      repotypes %in% c("cran", "standard") |
+        (!is.na(repositories) &
+          tolower(repositories) %in% c("cran", "@cran@"))
+    ) &
+    (
+      is.na(repositories) |
+        !nzchar(repositories) |
+        tolower(repositories) %in% c("cran", "@cran@")
+    )
+  refs[cran] <- paste0("cran::", packages[cran])
+  bioc <- !is.na(repotypes) & repotypes == "bioc"
+  refs[bioc & !use_remote] <- paste0(
+    "bioc::",
+    packages[bioc & !use_remote]
+  )
   refs
 }
 
