@@ -1,159 +1,83 @@
 # clir
 
-R Package Installer for Command Line Interface
+R package installer for the command line.
 
 [![CI](https://github.com/dceoy/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/dceoy/clir/actions/workflows/ci.yml)
 
-#### Supported versions
+## Supported R versions
 
-|    R     |    clir     |
-| :------: | :---------: |
-| &ge; 3.5 | &ge; v1.1.0 |
-| &lt; 3.5 | &lt; v1.0.8 |
+clir continuously tests the following support policy:
+
+| Platform | R versions |
+| :------: | :---------- |
+| Linux | R-devel, current release, and oldrel-1 |
+| macOS | current release (CLI smoke tests) |
 
 ## Usage
 
-#### Installation or update of R packages
+`clir install` and `clir update` use [`pak::pkg_install()`](https://pak.r-lib.org/reference/pkg_install.html).
+Package references are passed to pak unchanged, so CRAN, Bioconductor, GitHub, Git, and package archive sources
+can use the same command:
 
-- Install packages via CRAN using `install.packages()`.
+```sh
+clir install dplyr
+clir install bioc::GenomicRanges
+clir install r-lib/cli
+clir install git::https://example.com/packages/example.git
+clir update
+```
 
-  ```sh
-  $ clir install foreach doParallel tidyverse
-  ```
+Only required package dependencies are installed by default. Use pak's package-reference parameters when a
+different dependency policy is needed.
 
-- Install or update packages via CRAN using `devtools::install_cran()`.
+Other commands are available for configuration and package maintenance:
 
-  ```sh
-  $ clir install --devt=cran foreach doParallel tidyverse
-  ```
+```sh
+clir config --init
+clir cran https://cloud.r-project.org/
+clir validate dplyr
+clir session dplyr
+clir download dplyr
+clir uninstall dplyr
+```
 
-- Install or update packages via GitHub using `devtools::install_github()`.
-
-  ```sh
-  $ clir install --devt=github IRkernel/IRkernel
-  ```
-
-- Install or update packages via Bioconductor using `BiocManager::install()`.
-
-  ```sh
-  $ clir install --bioc GenomicRanges
-  ```
-
-- Install or update packages via Bioconductor using `devtools::install_bioc()`.
-
-  ```sh
-  $ clir install --devt=bioc GenomicRanges
-  ```
-
-- Update packages via CRAN using `update.packages()`.
-
-  ```sh
-  $ clir update
-  ```
-
-#### Validation of installed R packages
-
-- Validate loading of installed packages.
-
-  ```sh
-  $ clir validate foreach doParallel tidyverse
-  ```
-
-#### Session information
-
-- Load packages and print session information.
-
-  ```sh
-  $ clir session foreach doParallel tidyverse
-  ```
-
-Run `clir --help` for information.
+The former `drat`, `--devt`, and `--bioc` interfaces are removed. Use generic pak package references instead.
+Run `clir --help` for the complete command reference.
 
 ## Installation
 
-#### Installation into a local environment
-
-1.  Install R and the additional packages.
-
-    ```sh
-    # Ubuntu
-    $ sudo apt -y update
-    $ sudo apt -y install ca-certificates curl git r-base r-cran-devtools r-cran-docopt r-cran-yaml
-
-    # macOS with Homebrew
-    $ brew install curl git r
-    ```
-
-2.  Check out clir and run `install_clir.sh`.
-
-    ```sh
-    $ git clone https://github.com/dceoy/clir.git ~/.clir
-    ```
-
-3.  Install clir and the dependencies.
-
-    ```sh
-    $ ~/.clir/install_clir.sh
-    ```
-
-    `install_clir.sh` installs the following R packages:
-    - [docopt](https://cran.r-project.org/web/packages/docopt/index.html)
-    - [yaml](https://cran.r-project.org/web/packages/yaml/index.html)
-    - [devtools](https://cran.r-project.org/web/packages/devtools/index.html)
-    - [drat](https://cran.r-project.org/web/packages/drat/index.html)
-    - [BiocManager](https://cran.r-project.org/web/packages/BiocManager/index.html)
-
-    clir depends on docopt and yaml, and uses devtools, drat, and BiocManager additionally if they are available.
-
-    Run `~/.clir/install_clir.sh --help` for more details of the installer.
-
-4.  Set `~/.clir/bin` into `${PATH}` and set `~/.clir/r/library` into `${R_LIBS_USER}` or `${R_LIBS}`.
-
-    ```sh
-    $ echo 'export PATH="${HOME}/.clir/bin:${PATH}"' >> ~/.bash_profile
-    $ echo 'export R_LIBS_USER="${HOME}/.clir/r/library"' >> ~/.bash_profile
-    $ source ~/.bash_profile
-    ```
-
-    If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
-
-#### Installation into a system
-
-Run the installer with `--root` if you install clir into a system. (clir is going to be installed into `/usr/local` then.)
+Install R and Git, then check out clir and run the installer:
 
 ```sh
-$ curl -LSO https://raw.githubusercontent.com/dceoy/clir/master/install_clir.sh
-$ chmod +x install_clir.sh
-yy$ sudo ./install_clir.sh --root
-$ rm install_clir.sh
+git clone https://github.com/dceoy/clir.git ~/.clir
+~/.clir/install_clir.sh
 ```
 
-## Update
-
-#### Update of clir in a local environment
+The installer bootstraps only `docopt`, `yaml`, and `pak`. Use `--root` to install into `/usr/local`:
 
 ```sh
-$ ~/.clir/install_clir.sh
+sudo ~/.clir/install_clir.sh --root
 ```
 
-#### Update of clir installed into the system
+Add the clir `bin` directory to `PATH` after installation. `install_clir.sh --help` lists all installer options.
 
-```sh
-$ sudo /usr/local/src/clir/install_clir.sh --root
+## Libraries and configuration
+
+When neither `R_LIBS_USER` nor `R_LIBS` is set, clir uses an R-version-aware library:
+
+```text
+~/.clir/r/<R-major>.<R-minor>/library
 ```
 
-## Configuration
+For example, R 4.3 uses `~/.clir/r/4.3/library`. Explicit `R_LIBS_USER` and `R_LIBS` values remain authoritative.
+The installer option `--delete-r-lib` can reset only the current versioned library below the clir-managed `r`
+directory. It rejects external paths, the managed root, and symlinked targets.
 
-- Library path
+Configuration is stored in `r/clir.yml` below the clir root using named repositories:
 
-  R packages are installed into a directory in `${R_LIBS_USER}` nor `${R_LIBS}`.
-  If neither of them is set, a default library path is used.
-  The default path can be checked as follows:
+```yaml
+repos:
+  CRAN: https://cloud.r-project.org/
+```
 
-  ```sh
-  $ R --slave -e '.libPaths()[1]'
-  ```
-
-- CRAN and Drat repositories
-
-  clir saves URLs of CRAN mirrors and Drat repositories into `~/.clir/r/clir.yml` as a YAML file.
+Existing configurations using `cran_urls` are read and normalized when clir is upgraded.

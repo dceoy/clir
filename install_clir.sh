@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--delete-r-lib] [--bioconductor]
+#   install_clir.sh [--root] [-f|--force] [--cran=<url>] [--delete-r-lib]
 #   install_clir.sh -h|--help
 #
 # Description:
@@ -11,9 +11,7 @@
 #   --root            Install clir into the system directory (/usr/local)
 #   -f, --force       Force reinstallation
 #   --cran=<url>      Set a URL for CRAN [default: https://cloud.r-project.org/]
-#   --delete-r-lib    Delete the install packages before installation
-#                     (remove `.libPaths()[[1]]`)
-#   --bioconductor    Install Bioconductor (BiocManager::install)
+#   --delete-r-lib    Delete the current clir-managed R library before installation
 #   -h, --help        Print usage
 
 set -ue
@@ -46,7 +44,6 @@ SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
 DELETE_R_LIB=0
-BIOCONDUCTOR=0
 
 while [[ ${#} -ge 1 ]]; do
   case "${1}" in
@@ -63,13 +60,10 @@ while [[ ${#} -ge 1 ]]; do
       CRAN_URL="${2}" && shift 2
       ;;
     --cran=* )
-      CRAN_URL="${1#*\=}" && shift 1
+      CRAN_URL="${1#*=}" && shift 1
       ;;
     '--delete-r-lib' )
       DELETE_R_LIB=1 && shift 1
-      ;;
-    '--bioconductor' )
-      BIOCONDUCTOR=1 && shift 1
       ;;
     '-h' | '--help' )
       print_usage && exit 0
@@ -80,20 +74,10 @@ while [[ ${#} -ge 1 ]]; do
   esac
 done
 
-if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
+if [[ -n "${CLIR_SOURCE_DIR:-}" ]]; then
+  CLIR_ROOT=$(realpath "${CLIR_SOURCE_DIR}")
+elif [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
   CLIR_ROOT="${HOME}/.clir"
-  set +u
-  if [[ -n "${R_LIBS_USER}" ]]; then
-    export R_LIBS_USER
-    LIB_DIR="${R_LIBS_USER}"
-  elif [[ -n "${R_LIBS}" ]]; then
-    export R_LIBS
-    LIB_DIR="${R_LIBS}"
-  else
-    export R_LIBS_USER="${CLIR_ROOT}/r/library"
-    LIB_DIR="${R_LIBS_USER}"
-  fi
-  set -u
 else
   CLIR_ROOT='/usr/local/src/clir'
 fi
@@ -103,75 +87,108 @@ R --version || abort 'R is not found.'
 git --version || abort 'Git is not found.'
 echo
 
-if [[ ${DELETE_R_LIB} -ne 0 ]]; then
-  echo '>>> Delete the installed packages'
-  R -q -e 'system(paste("set -ex && rm -rf ", .libPaths()[[1]], collapse = ""));'
+function resolve_r_lib {
+  # shellcheck disable=SC2016
+  R --vanilla --slave -e '
+    paths <- Sys.getenv(c("R_LIBS_USER", "R_LIBS"));
+    path <- strsplit(paths[nzchar(paths)][1], .Platform$path.sep, fixed = TRUE)[[1]][1];
+    path <- gsub("%V", as.character(getRversion()),
+      gsub("%v", paste(R.version$major,
+        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."),
+        path, fixed = TRUE), fixed = TRUE);
+    cat(path.expand(path));
+  '
+}
+
+if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
+  set +u
+  if [[ -n "${R_LIBS_USER}" ]]; then
+    export R_LIBS_USER
+    LIB_DIR=$(resolve_r_lib)
+  elif [[ -n "${R_LIBS}" ]]; then
+    export R_LIBS
+    LIB_DIR=$(resolve_r_lib)
+  else
+    # shellcheck disable=SC2016
+    R_VERSION=$(R --vanilla --slave -e '
+      cat(paste(
+        R.version$major,
+        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+        sep = "."
+      ))
+    ')
+    export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
+    LIB_DIR="${R_LIBS_USER}"
+  fi
+  set -u
+else
+  LIB_DIR=$(R --vanilla --slave -e 'cat(.libPaths()[[1]])')
 fi
 
-echo '>>> Check out clir from GitHub'
-if [[ ! -d "${CLIR_ROOT}" ]]; then
-  git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
+if [[ -n "${CLIR_SOURCE_DIR:-}" ]]; then
+  [[ -f "${CLIR_ROOT}/src/clir.R" ]] || abort "clir source not found: ${CLIR_ROOT}"
 else
-  cd "${CLIR_ROOT}" || abort "cd failed: ${CLIR_ROOT}"
-  if [[ ${REINSTALL} -eq 0 ]]; then
-    git pull --prune origin master
+  echo '>>> Check out clir from GitHub'
+  if [[ ! -d "${CLIR_ROOT}" ]]; then
+    git clone https://github.com/dceoy/clir.git "${CLIR_ROOT}"
   else
-    git fetch --prune origin master
-    git reset --hard origin/master
+    cd "${CLIR_ROOT}" || abort "cd failed: ${CLIR_ROOT}"
+    if [[ ${REINSTALL} -eq 0 ]]; then
+      git pull --prune origin master
+    else
+      git fetch --prune origin master
+      git reset --hard origin/master
+    fi
+    cd -
   fi
-  cd -
+  echo
 fi
-echo
+
+if [[ ${DELETE_R_LIB} -ne 0 ]]; then
+  echo '>>> Delete the current clir-managed library'
+  CLIR_ROOT="${CLIR_ROOT}" CLIR_LIBRARY="${LIB_DIR}" R --vanilla --slave -e '
+    source(file.path(Sys.getenv("CLIR_ROOT"), "src", "util.R"));
+    reset_clir_library(
+      target = Sys.getenv("CLIR_LIBRARY"),
+      clir_root_dir = Sys.getenv("CLIR_ROOT")
+    )
+  '
+fi
 
 echo '>>> Install dependencies'
 if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
   [[ -d "${LIB_DIR}" ]] || mkdir -p "${LIB_DIR}"
 else
-  ln -sf /usr/local/src/clir/src/clir.R /usr/local/bin/clir
+  ln -sf "${CLIR_ROOT}/src/clir.R" /usr/local/bin/clir
 fi
 cat << EOF | R --vanilla -q || abort 'Package installation failed.'
 options(repos = c(CRAN = '${CRAN_URL}'));
-bioc_install <- ${BIOCONDUCTOR};
-pkgs <- c('docopt', 'yaml', 'devtools', 'drat', 'stringr');
-if (bioc_install != 0) {
-  pkgs <- c(pkgs, 'BiocManager');
-}
-sapply(pkgs,
-       function(p) {
-         if ((${REINSTALL} != 0) || (! require(p, character.only = TRUE))) {
-           install.packages(pkgs = p, lib = .libPaths()[[1]], dependencies = TRUE, clean = TRUE);
-         };
-         library(p, character.only = TRUE);
-       });
-if (bioc_install != 0) {
-  BiocManager::install();
+pkgs <- c('docopt', 'yaml', 'pak');
+for (p in pkgs) {
+  if ((${REINSTALL} != 0) || (!requireNamespace(p, quietly = TRUE))) {
+    install.packages(
+      pkgs = p,
+      lib = .libPaths()[[1]],
+      dependencies = NA,
+      clean = TRUE
+    );
+  }
+  if (!requireNamespace(p, quietly = TRUE)) {
+    stop(paste('Loading', p, 'failed.'));
+  }
 }
 EOF
 echo
 
 echo '>>> Validate installed packages'
-"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --devt=cran devtools docopt drat stringr yaml
-if [[ ${BIOCONDUCTOR} -ne 0 ]]; then
-  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat stringr BiocManager
-else
-  "${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml devtools drat stringr
-fi
+"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --no-upgrade docopt yaml pak
+"${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml pak
 echo
 
 echo '>>> Done.'
-# shellcheck disable=SC2016
 if [[ ${SYSTEM_INSTALL} -eq 0 ]]; then
-  echo '
-
-To access the utility, set environment variables as follows:
-
-  # Add clir/bin to ${PATH}
-  $ echo "export PATH=${HOME}/.clir/bin:${PATH}" >> ~/.bash_profile
-
-  # Add your R library path to ${R_LIBS_USER}
-  $ echo "export R_LIBS_USER=${HOME}/.clir/r/library" >> ~/.bash_profile
-
-If you use Zsh, modify `~/.zshrc` instead of `~/.bash_profile`.
-
-For more information, see https://github.com/dceoy/clir'
+  echo "Add ${CLIR_ROOT}/bin to PATH."
+  echo "The clir library is ${LIB_DIR}."
+  echo 'If you use Zsh, update ~/.zshrc; otherwise update ~/.bash_profile.'
+  echo 'For more information, see https://github.com/dceoy/clir'
 fi
