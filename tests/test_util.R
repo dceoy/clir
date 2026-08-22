@@ -142,6 +142,26 @@ local({
     load_repos(multiple_config),
     c(CRAN = multiple_repos[[1L]], repository1 = multiple_repos[[2L]])
   ))
+  mixed_repos <- c(
+    CRAN = requested_repo,
+    "https://example.invalid/mixed"
+  )
+  stopifnot(identical(
+    normalize_repos(list(repos = mixed_repos)),
+    c(
+      CRAN = requested_repo,
+      repository1 = "https://example.invalid/mixed"
+    )
+  ))
+  mixed_config <- file.path(root, "mixed.yml")
+  add_config(mixed_repos, key = "repos", clir_yml = mixed_config)
+  stopifnot(identical(
+    load_repos(mixed_config),
+    c(
+      CRAN = requested_repo,
+      repository1 = "https://example.invalid/mixed"
+    )
+  ))
 
   generic_config <- file.path(root, "generic.yml")
   yaml::write_yaml(
@@ -160,8 +180,10 @@ local({
   stopifnot(identical(load_repos(legacy_config)[["CRAN"]], "https://example.invalid/legacy"))
 
   captured <- NULL
+  captured_calls <- list()
   fake_pkg_install <- function(...) {
     captured <<- c(list(repos = getOption("repos")), list(...))
+    captured_calls <<- c(captured_calls, list(captured))
     invisible(NULL)
   }
   refs <- c(
@@ -261,6 +283,80 @@ local({
     )
     stopifnot(identical(unname(filtered), reference_case$expected))
   }
+  standard_source_cases <- list(
+    custom = list(
+      reference = "standard::alpha",
+      expected = character(),
+      status = data.frame(
+        package = "alpha",
+        remotepkgref = NA_character_,
+        repotype = NA_character_,
+        repository = "https://example.invalid/internal",
+        stringsAsFactors = FALSE
+      )
+    ),
+    bioc = list(
+      reference = "standard::alpha",
+      expected = character(),
+      status = data.frame(
+        package = "alpha",
+        remotepkgref = NA_character_,
+        repotype = "bioc",
+        repository = "Bioconductor",
+        stringsAsFactors = FALSE
+      )
+    )
+  )
+  for (case_name in names(standard_source_cases)) {
+    reference_case <- standard_source_cases[[case_name]]
+    filtered <- filter_installed_pkgs(
+      pkgs = reference_case$reference,
+      r_lib = explicit,
+      installed_fn = no_upgrade_inventory,
+      status_fn = function(...) reference_case$status
+    )
+    stopifnot(identical(unname(filtered), reference_case$expected))
+  }
+
+  github_reference_cases <- list(
+    shorthand = list(
+      reference = "owner/alpha",
+      installed = "github::owner/alpha",
+      expected = character()
+    ),
+    url = list(
+      reference = "https://github.com/owner/alpha",
+      installed = "github::owner/alpha",
+      expected = character()
+    ),
+    versioned = list(
+      reference = "owner/alpha@main",
+      installed = "github::owner/alpha@main",
+      expected = character()
+    ),
+    git = list(
+      reference = "git::https://github.com/owner/alpha",
+      installed = "github::owner/alpha",
+      expected = "git::https://github.com/owner/alpha"
+    )
+  )
+  for (case_name in names(github_reference_cases)) {
+    reference_case <- github_reference_cases[[case_name]]
+    filtered <- filter_installed_pkgs(
+      pkgs = reference_case$reference,
+      r_lib = explicit,
+      installed_fn = no_upgrade_inventory,
+      status_fn = function(...) {
+        data.frame(
+          package = "alpha",
+          remotepkgref = reference_case$installed,
+          repotype = "github",
+          stringsAsFactors = FALSE
+        )
+      }
+    )
+    stopifnot(identical(unname(filtered), reference_case$expected))
+  }
 
   update_pkgs(
     repos = c(CRAN = requested_repo),
@@ -277,8 +373,8 @@ local({
       dimnames = list(c("alpha", "beta", "gamma", "delta"), NULL)
     )
   }
+  custom_repo <- "https://example.invalid/internal"
   fake_status <- function(pkg, lib) {
-    custom_repo <- "https://example.invalid/internal"
     data.frame(
       package = pkg,
       remotepkgref = c(
@@ -288,7 +384,7 @@ local({
         NA
       ),
       repotype = c("cran", NA, NA, "bioc"),
-      repository = c(custom_repo, NA, NA, NA),
+      repository = c("CRAN", NA, NA, NA),
       stringsAsFactors = FALSE
     )
   }
@@ -309,10 +405,106 @@ local({
     )
   ))
   stopifnot(identical(
-    unname(captured$repos)[[1L]],
-    "https://example.invalid/internal"
+    captured$repos,
+    c(CRAN = requested_repo)
   ))
   stopifnot(identical(captured$upgrade, TRUE))
+
+  custom_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = rep(NA_character_, length(pkg)),
+      repotype = rep(NA_character_, length(pkg)),
+      repository = rep(custom_repo, length(pkg)),
+      stringsAsFactors = FALSE
+    )
+  }
+  custom_installed <- function(...) {
+    structure(
+      matrix(nrow = 1L, ncol = 0L),
+      dimnames = list("alpha", NULL)
+    )
+  }
+  captured_calls <- list()
+  update_pkgs(
+    repos = c(CRAN = requested_repo, INTERNAL = custom_repo),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = custom_status,
+    installed_fn = custom_installed
+  )
+  stopifnot(identical(
+    captured$repos,
+    c(INTERNAL = custom_repo, CRAN = requested_repo)
+  ))
+
+  captured_calls <- list()
+  update_pkgs(
+    repos = c(CRAN = requested_repo),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = custom_status,
+    installed_fn = custom_installed
+  )
+  stopifnot(identical(captured$repos, c(CRAN = requested_repo)))
+
+  unsafe_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = rep(NA_character_, length(pkg)),
+      repotype = rep(NA_character_, length(pkg)),
+      repository = rep("file:///tmp/untrusted", length(pkg)),
+      stringsAsFactors = FALSE
+    )
+  }
+  update_pkgs(
+    repos = c(CRAN = requested_repo),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = unsafe_status,
+    installed_fn = fake_installed
+  )
+  stopifnot(identical(captured$repos, c(CRAN = requested_repo)))
+
+  repo_a <- "https://example.invalid/a"
+  repo_b <- "https://example.invalid/b"
+  two_repo_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = rep(NA_character_, length(pkg)),
+      repotype = rep(NA_character_, length(pkg)),
+      repository = c(repo_a, repo_b),
+      stringsAsFactors = FALSE
+    )
+  }
+  two_repo_installed <- function(...) {
+    structure(
+      matrix(nrow = 2L, ncol = 0L),
+      dimnames = list(c("alpha", "beta"), NULL)
+    )
+  }
+  captured_calls <- list()
+  update_pkgs(
+    repos = c(CRAN = requested_repo, A = repo_a, B = repo_b),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = two_repo_status,
+    installed_fn = two_repo_installed
+  )
+  stopifnot(length(captured_calls) == 2L)
+  calls_by_pkg <- setNames(captured_calls, vapply(
+    captured_calls,
+    function(call) call$pkg,
+    character(1)
+  ))
+  stopifnot(identical(
+    unname(calls_by_pkg[["alpha"]]$repos)[[1L]],
+    repo_a
+  ))
+  stopifnot(identical(
+    unname(calls_by_pkg[["beta"]]$repos)[[1L]],
+    repo_b
+  ))
 
   managed_file <- file.path(versioned, "package-file")
   writeLines("package", managed_file)
