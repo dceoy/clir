@@ -494,6 +494,38 @@ local({
       dimnames = list("alpha", NULL)
     )
   }
+  standard_remote_status <- function(pkg, lib) {
+    data.frame(
+      package = pkg,
+      remotepkgref = pkg,
+      remotetype = rep("standard", length(pkg)),
+      repotype = rep("cran", length(pkg)),
+      repository = rep("CRAN", length(pkg)),
+      remoterepos = rep(custom_repo, length(pkg)),
+      stringsAsFactors = FALSE
+    )
+  }
+  filtered <- filter_installed_pkgs(
+    pkgs = c("cran::alpha", "standard::alpha"),
+    r_lib = explicit,
+    installed_fn = custom_installed,
+    status_fn = standard_remote_status
+  )
+  stopifnot(identical(unname(filtered), character()))
+  captured_calls <- list()
+  update_pkgs(
+    repos = c(CRAN = requested_repo, INTERNAL = custom_repo),
+    r_lib = explicit,
+    pkg_install = fake_pkg_install,
+    status_fn = standard_remote_status,
+    installed_fn = custom_installed
+  )
+  stopifnot(identical(captured$pkg, "alpha"))
+  stopifnot(identical(
+    captured$repos,
+    c(INTERNAL = custom_repo, CRAN = requested_repo)
+  ))
+
   captured_calls <- list()
   update_pkgs(
     repos = c(CRAN = requested_repo, INTERNAL = custom_repo),

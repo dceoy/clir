@@ -394,6 +394,36 @@ is_plain_package_ref <- function(ref) {
   grepl("^[A-Za-z][A-Za-z0-9.]*$", ref)
 }
 
+status_uses_remote_ref <- function(status) {
+  if (is.null(status) || !is.data.frame(status)) {
+    return(logical())
+  }
+  remote_refs <- status[["remotepkgref"]]
+  if (is.null(remote_refs)) {
+    return(rep(FALSE, nrow(status)))
+  }
+  remote_refs <- as.character(remote_refs)
+  use_remote <- !is.na(remote_refs) & nzchar(remote_refs)
+  remote_types <- status[["remotetype"]]
+  if (is.null(remote_types)) {
+    remote_types <- status[["RemoteType"]]
+  }
+  explicit_type <- rep(FALSE, nrow(status))
+  if (!is.null(remote_types)) {
+    remote_types <- tolower(trimws(as.character(remote_types)))
+    explicit_type <- !is.na(remote_types) & nzchar(remote_types)
+    use_remote[explicit_type] <- use_remote[explicit_type] &
+      remote_types[explicit_type] != "standard"
+  }
+  repotypes <- status[["repotype"]]
+  if (!is.null(repotypes)) {
+    repotypes <- tolower(trimws(as.character(repotypes)))
+    standard_type <- repotypes %in% c("cran", "standard", "bioc")
+    use_remote[!explicit_type & standard_type] <- FALSE
+  }
+  use_remote
+}
+
 standard_installed_refs <- function(status) {
   if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
     return(character())
@@ -403,18 +433,17 @@ standard_installed_refs <- function(status) {
     return(character())
   }
   packages <- as.character(packages)
-  remote_refs <- status[["remotepkgref"]]
-  use_remote <- if (is.null(remote_refs)) {
-    rep(FALSE, length(packages))
-  } else {
-    remote_refs <- as.character(remote_refs)
-    !is.na(remote_refs) & nzchar(remote_refs)
-  }
+  use_remote <- status_uses_remote_ref(status)
   repotypes <- status[["repotype"]]
   if (is.null(repotypes)) {
     repotypes <- rep(NA_character_, length(packages))
   }
   repotypes <- tolower(as.character(repotypes))
+  original_repositories <- status[["repository"]]
+  if (is.null(original_repositories)) {
+    original_repositories <- rep(NA_character_, length(packages))
+  }
+  original_repositories <- as.character(original_repositories)
   repositories <- status_repositories(status)
   standard <- !use_remote & (
     repotypes %in% c("cran", "standard", "bioc") |
@@ -425,9 +454,9 @@ standard_installed_refs <- function(status) {
   }
   refs <- paste0("standard::", packages[standard])
   cran <- standard & repotypes %in% c("cran", "standard") & (
-    is.na(repositories) |
-      !nzchar(repositories) |
-      tolower(repositories) %in% c("cran", "@cran@")
+    is.na(original_repositories) |
+      !nzchar(original_repositories) |
+      tolower(original_repositories) %in% c("cran", "@cran@")
   )
   unique(c(refs, paste0("cran::", packages[cran])))
 }
@@ -586,12 +615,10 @@ status_package_refs <- function(status) {
   packages <- as.character(packages)
   refs <- packages
   remote_refs <- status[["remotepkgref"]]
+  use_remote <- status_uses_remote_ref(status)
   if (!is.null(remote_refs)) {
     remote_refs <- as.character(remote_refs)
-    use_remote <- !is.na(remote_refs) & nzchar(remote_refs)
     refs[use_remote] <- remote_refs[use_remote]
-  } else {
-    use_remote <- rep(FALSE, length(refs))
   }
   repotypes <- status[["repotype"]]
   if (is.null(repotypes)) {
@@ -637,13 +664,7 @@ merge_update_repos <- function(repos, status) {
   if (is.null(packages)) {
     return(repos)
   }
-  remote_refs <- status[["remotepkgref"]]
-  use_remote <- if (is.null(remote_refs)) {
-    rep(FALSE, length(repositories))
-  } else {
-    remote_refs <- as.character(remote_refs)
-    !is.na(remote_refs) & nzchar(remote_refs)
-  }
+  use_remote <- status_uses_remote_ref(status)
   repotypes <- status[["repotype"]]
   if (is.null(repotypes)) {
     repotypes <- rep(NA_character_, length(repositories))
@@ -702,13 +723,7 @@ status_repo_groups <- function(status, refs) {
     return(list())
   }
   repositories <- status_repositories(status)
-  remote_refs <- status[["remotepkgref"]]
-  use_remote <- if (is.null(remote_refs)) {
-    rep(FALSE, length(refs))
-  } else {
-    remote_refs <- as.character(remote_refs)
-    !is.na(remote_refs) & nzchar(remote_refs)
-  }
+  use_remote <- status_uses_remote_ref(status)
   repotypes <- status[["repotype"]]
   if (is.null(repotypes)) {
     repotypes <- rep(NA_character_, length(refs))
