@@ -167,64 +167,36 @@ env -u R_LIBS_USER \
 [[ "$(grep -c '^R$' "${launcher_probe_count}")" = 0 ]]
 [[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
 
-# shellcheck disable=SC2016
-printf 'R_LIBS_USER=${R_LIBS_USER-default}\n' >"${test_root}/.Renviron"
 conditional_system_user="${test_root}/system-user-default"
-: >"${launcher_probe_count}"
-env -u R_LIBS_USER -u R_LIBS \
-  HOME="${test_root}" \
-  CLIR_TEST_RECORD="${launcher_record}" \
-  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
-  CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
-  PATH="${fake_bin}:${PATH}" \
-  "${cli}" --version
-grep -Fxq "${conditional_system_user}" "${launcher_record}"
-[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
-[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
-
-# shellcheck disable=SC2016
-printf 'R_LIBS_USER=${R_LIBS_USER:-default}\n' >"${test_root}/.Renviron"
-: >"${launcher_probe_count}"
-env -u R_LIBS_USER -u R_LIBS \
-  HOME="${test_root}" \
-  CLIR_TEST_RECORD="${launcher_record}" \
-  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
-  CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
-  PATH="${fake_bin}:${PATH}" \
-  "${cli}" --version
-grep -Fxq "${conditional_system_user}" "${launcher_record}"
-[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
-[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
-
-# shellcheck disable=SC2016
-printf 'R_LIBS=${R_LIBS-default}\n' >"${test_root}/.Renviron"
-: >"${launcher_probe_count}"
-env -u R_LIBS_USER -u R_LIBS \
-  HOME="${test_root}" \
-  CLIR_TEST_RECORD="${launcher_record}" \
-  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
-  CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
-  PATH="${fake_bin}:${PATH}" \
-  "${cli}" --version
-[[ "$(sed -n '1p' "${launcher_record}")" != 'NULL' ]]
-[[ "$(sed -n '2p' "${launcher_record}")" = 'conditional-r-default' ]]
-[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
-[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
-
-# shellcheck disable=SC2016
-printf 'R_LIBS=${R_LIBS:-default}\n' >"${test_root}/.Renviron"
-: >"${launcher_probe_count}"
-env -u R_LIBS_USER -u R_LIBS \
-  HOME="${test_root}" \
-  CLIR_TEST_RECORD="${launcher_record}" \
-  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
-  CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
-  PATH="${fake_bin}:${PATH}" \
-  "${cli}" --version
-[[ "$(sed -n '1p' "${launcher_record}")" != 'NULL' ]]
-[[ "$(sed -n '2p' "${launcher_record}")" = 'conditional-r-default' ]]
-[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
-[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
+conditional_cases=(
+  "user-dash|R_LIBS_USER|\${R_LIBS_USER-default}|${conditional_system_user}|UNSET"
+  "user-colon-dash|R_LIBS_USER|\${R_LIBS_USER:-default}|${conditional_system_user}|UNSET"
+  "r-dash|R_LIBS|\${R_LIBS-default}|UNSET|conditional-r-default"
+  "r-colon-dash|R_LIBS|\${R_LIBS:-default}|UNSET|conditional-r-default"
+)
+for conditional_case in "${conditional_cases[@]}"; do
+  IFS='|' read -r case_id variable expression expected_user expected_r <<<"${conditional_case}"
+  # shellcheck disable=SC2016
+  printf '%s=%s\n' "${variable}" "${expression}" >"${test_root}/.Renviron"
+  : >"${launcher_probe_count}"
+  env -u R_LIBS_USER -u R_LIBS \
+    HOME="${test_root}" \
+    CLIR_TEST_RECORD="${launcher_record}" \
+    CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
+    CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
+    PATH="${fake_bin}:${PATH}" \
+    "${cli}" --version
+  [[ "$(sed -n '1p' "${launcher_record}")" = "${expected_user}" ]] || {
+    echo "conditional startup case failed: ${case_id}" >&2
+    exit 1
+  }
+  [[ "$(sed -n '2p' "${launcher_record}")" = "${expected_r}" ]] || {
+    echo "conditional startup case failed: ${case_id}" >&2
+    exit 1
+  }
+  [[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
+  [[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
+done
 
 same_default_user=$(env -u R_LIBS_USER -u R_LIBS -u R_ENVIRON_USER -u R_PROFILE_USER \
   HOME="${test_root}" \
