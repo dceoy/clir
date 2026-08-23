@@ -152,6 +152,7 @@ cat >"${installer_fake_bin}/Rscript" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 args=" $* "
+[[ "${args}" != *' -d '* ]]
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
   -f "${HOME}/.Rprofile" ]] &&
@@ -173,7 +174,7 @@ CLIR_TEST_PROBE_MARKER="${test_root}/probe-profile-marker" \
 CLIR_TEST_PROFILE_MARKER="${test_root}/runtime-profile-marker" \
 HOME="${test_root}" \
 PATH="${installer_fake_bin}:${PATH}" \
-  "${installer_root}/install_clir.sh"
+  "${installer_root}/install_clir.sh" --debug
 [[ -f "${installer_marker}" ]]
 [[ ! -e "${test_root}/managed-marker" ]]
 [[ ! -e "${test_root}/probe-profile-marker" ]]

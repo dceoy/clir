@@ -17,10 +17,9 @@
 set -ue
 
 SCRIPT_PATH=$(realpath "${0}")
-DEBUG_FLAG=''
 if [[ ${#} -ge 1 ]]; then
   for a in "${@}"; do
-    [[ "${a}" = '--debug' ]] && DEBUG_FLAG='-d' && set -x && break
+    [[ "${a}" = '--debug' ]] && set -x && break
   done
 fi
 
@@ -221,8 +220,8 @@ EOF
 echo
 
 echo '>>> Validate installed packages'
-"${CLIR_ROOT}/bin/clir" install ${DEBUG_FLAG} --no-upgrade docopt yaml pak
-"${CLIR_ROOT}/bin/clir" validate ${DEBUG_FLAG} docopt yaml pak
+"${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
+"${CLIR_ROOT}/bin/clir" validate docopt yaml pak
 echo
 
 echo '>>> Done.'
