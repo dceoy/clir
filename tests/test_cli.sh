@@ -99,6 +99,7 @@ cp "${repo_root}/src/clir.R" "${installer_root}/src/clir.R"
 cp "${repo_root}/src/util.R" "${installer_root}/src/util.R"
 chmod +x "${installer_root}/install_clir.sh" "${installer_root}/bin/clir"
 printf 'R_LIBS_USER=%s\n' "${installer_env_library}" >"${test_root}/.Renviron"
+printf '# noisy profile regression\n' >"${test_root}/.Rprofile"
 cat >"${installer_fake_bin}/R" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -107,6 +108,12 @@ if [[ "${1:-}" = '--version' ]]; then
   exit 0
 fi
 args=" $* "
+if [[ "${args}" != *'--no-init-file'* &&
+  "${args}" != *'--vanilla'* &&
+  -f "${HOME}/.Rprofile" ]]; then
+  printf 'profile-noise'
+  touch "${CLIR_TEST_PROBE_MARKER}"
+fi
 if [[ "${args}" = *' -e '* ]]; then
   if [[ "${args}" = *'R.version'* ]]; then
     printf '4.3'
@@ -134,6 +141,9 @@ EOF
 cat >"${installer_fake_bin}/Rscript" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ -f "${HOME}/.Rprofile" ]]; then
+  touch "${CLIR_TEST_PROFILE_MARKER}"
+fi
 [[ "${R_LIBS_USER:-}" = "${CLIR_TEST_ENV_LIBRARY}" ]]
 [[ -f "${CLIR_TEST_ENV_MARKER}" ]]
 EOF
@@ -145,11 +155,15 @@ CLIR_TEST_MANAGED_LIBRARY="${installer_managed_library}" \
 CLIR_TEST_DEFAULT_LIBRARY="${installer_default_library}" \
 CLIR_TEST_ENV_MARKER="${installer_marker}" \
 CLIR_TEST_MANAGED_MARKER="${test_root}/managed-marker" \
+CLIR_TEST_PROBE_MARKER="${test_root}/probe-profile-marker" \
+CLIR_TEST_PROFILE_MARKER="${test_root}/runtime-profile-marker" \
 HOME="${test_root}" \
 PATH="${installer_fake_bin}:${PATH}" \
   "${installer_root}/install_clir.sh"
 [[ -f "${installer_marker}" ]]
 [[ ! -e "${test_root}/managed-marker" ]]
+[[ ! -e "${test_root}/probe-profile-marker" ]]
+[[ -f "${test_root}/runtime-profile-marker" ]]
 
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   cli_env=("R_LIBS_USER=${R_LIBS_USER}")

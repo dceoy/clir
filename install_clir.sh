@@ -96,7 +96,7 @@ function read_r_library_env {
     '
   else
     # shellcheck disable=SC2016
-    R --no-save --no-restore --no-echo --slave -e '
+    R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
       cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
     '
   fi
@@ -132,7 +132,7 @@ function use_r_startup_library {
 function resolve_r_lib {
   # R expands R_LIBS_USER conversion specifiers during normal startup.
   # shellcheck disable=SC2016
-  R --no-save --no-restore --no-echo --slave -e '
+  R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
     paths <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
     paths <- paths[nzchar(paths) & paths != "NULL"];
     if (length(paths) == 0L) stop("No R library path is configured.");
@@ -200,7 +200,7 @@ if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
   ln -sf "${CLIR_ROOT}/bin/clir" /usr/local/bin/clir
 fi
 CLIR_CRAN_URL="${CRAN_URL}" CLIR_REINSTALL="${REINSTALL}" \
-  R --no-save --no-restore --no-echo -q <<'EOF' || abort 'Package installation failed.'
+  R --no-site-file --no-init-file --no-save --no-restore --no-echo -q <<'EOF' || abort 'Package installation failed.'
 options(repos = c(CRAN = Sys.getenv("CLIR_CRAN_URL")));
 pkgs <- c('docopt', 'yaml', 'pak');
 reinstall <- identical(Sys.getenv("CLIR_REINSTALL"), "1");

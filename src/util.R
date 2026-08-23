@@ -414,11 +414,7 @@ standard_installed_refs <- function(status) {
     repotypes <- rep(NA_character_, length(packages))
   }
   repotypes <- tolower(as.character(repotypes))
-  repositories <- status[["repository"]]
-  if (is.null(repositories)) {
-    repositories <- rep(NA_character_, length(packages))
-  }
-  repositories <- as.character(repositories)
+  repositories <- status_repositories(status)
   standard <- !use_remote & (
     repotypes %in% c("cran", "standard", "bioc") |
       (!is.na(repositories) & nzchar(repositories))
@@ -552,6 +548,24 @@ install_pkgs <- function(pkgs, repos, r_lib = .libPaths()[1L],
   invisible(result)
 }
 
+status_repositories <- function(status) {
+  repositories <- status[["repository"]]
+  if (is.null(repositories)) {
+    repositories <- rep(NA_character_, nrow(status))
+  }
+  repositories <- as.character(repositories)
+  for (column in c("remoterepos", "RemoteRepos")) {
+    values <- status[[column]]
+    if (is.null(values)) {
+      next
+    }
+    values <- as.character(values)
+    missing <- is.na(repositories) | !nzchar(repositories)
+    repositories[missing] <- values[missing]
+  }
+  repositories
+}
+
 status_package_refs <- function(status) {
   if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
     return(character())
@@ -575,11 +589,7 @@ status_package_refs <- function(status) {
     repotypes <- rep(NA_character_, length(refs))
   }
   repotypes <- tolower(as.character(repotypes))
-  repositories <- status[["repository"]]
-  if (is.null(repositories)) {
-    repositories <- rep(NA_character_, length(refs))
-  }
-  repositories <- as.character(repositories)
+  repositories <- status_repositories(status)
   cran_repositories <- !is.na(repositories) &
     tolower(repositories) %in% c("cran", "@cran@")
   cran <- !use_remote &
@@ -613,11 +623,7 @@ merge_update_repos <- function(repos, status) {
   if (is.null(status) || !is.data.frame(status) || nrow(status) == 0L) {
     return(repos)
   }
-  repositories <- status[["repository"]]
-  if (is.null(repositories)) {
-    return(repos)
-  }
-  repositories <- as.character(repositories)
+  repositories <- status_repositories(status)
   packages <- status[["package"]]
   if (is.null(packages)) {
     return(repos)
@@ -686,11 +692,7 @@ status_repo_groups <- function(status, refs) {
   if (length(indices) == 0L) {
     return(list())
   }
-  repositories <- status[["repository"]]
-  if (is.null(repositories)) {
-    return(list(indices))
-  }
-  repositories <- as.character(repositories)
+  repositories <- status_repositories(status)
   remote_refs <- status[["remotepkgref"]]
   use_remote <- if (is.null(remote_refs)) {
     rep(FALSE, length(refs))

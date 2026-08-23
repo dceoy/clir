@@ -18,7 +18,7 @@ function read_r_library_env {
     '
   else
     # shellcheck disable=SC2016
-    R --no-save --no-restore --no-echo --slave -e '
+    R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
       cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
     '
   fi
