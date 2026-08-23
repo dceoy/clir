@@ -99,7 +99,7 @@ cp "${repo_root}/src/clir.R" "${installer_root}/src/clir.R"
 cp "${repo_root}/src/util.R" "${installer_root}/src/util.R"
 chmod +x "${installer_root}/install_clir.sh" "${installer_root}/bin/clir"
 printf 'R_LIBS_USER=%s\n' "${installer_env_library}" >"${test_root}/.Renviron"
-printf '# noisy profile regression\n' >"${test_root}/.Rprofile"
+printf '# CLIR_TEST_PROFILE=enabled\n' >"${test_root}/.Rprofile"
 cat >"${installer_fake_bin}/R" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -108,9 +108,19 @@ if [[ "${1:-}" = '--version' ]]; then
   exit 0
 fi
 args=" $* "
+startup_env_library="${CLIR_TEST_DEFAULT_LIBRARY}"
+if [[ "${args}" != *'--no-environ'* &&
+  "${args}" != *'--vanilla'* &&
+  -f "${HOME}/.Renviron" ]]; then
+  renviron_library=$(sed -ne 's/^R_LIBS_USER=//p' "${HOME}/.Renviron")
+  if [[ -n "${renviron_library}" ]]; then
+    startup_env_library="${renviron_library}"
+  fi
+fi
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
-  -f "${HOME}/.Rprofile" ]]; then
+  -f "${HOME}/.Rprofile" &&
+  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile" ]]; then
   printf 'profile-noise'
   touch "${CLIR_TEST_PROBE_MARKER}"
 fi
@@ -121,12 +131,12 @@ if [[ "${args}" = *' -e '* ]]; then
     if [[ "${args}" = *'--vanilla'* ]]; then
       printf '\034%s' "${CLIR_TEST_DEFAULT_LIBRARY}"
     else
-      printf '\034%s' "${CLIR_TEST_ENV_LIBRARY}"
+      printf '\034%s' "${startup_env_library}"
     fi
   elif [[ "${args}" = *'paths <-'* && "${args}" = *'--vanilla'* ]]; then
     printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
   elif [[ "${args}" = *'paths <-'* ]]; then
-    printf '%s' "${CLIR_TEST_ENV_LIBRARY}"
+    printf '%s' "${startup_env_library}"
   elif [[ "${args}" = *'--vanilla'* ]]; then
     printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
   else
@@ -141,7 +151,11 @@ EOF
 cat >"${installer_fake_bin}/Rscript" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ -f "${HOME}/.Rprofile" ]]; then
+args=" $* "
+if [[ "${args}" != *'--no-init-file'* &&
+  "${args}" != *'--vanilla'* &&
+  -f "${HOME}/.Rprofile" &&
+  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile" ]]; then
   touch "${CLIR_TEST_PROFILE_MARKER}"
 fi
 [[ "${R_LIBS_USER:-}" = "${CLIR_TEST_ENV_LIBRARY}" ]]

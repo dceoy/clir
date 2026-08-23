@@ -512,18 +512,20 @@ local({
   )
   stopifnot(identical(captured$repos, c(CRAN = requested_repo)))
 
-  custom_metadata_cases <- c(
-    lower = "remoterepos",
-    upper = "RemoteRepos"
+  custom_metadata_cases <- data.frame(
+    metadata = c("remoterepos", "RemoteRepos", "remoterepos", "RemoteRepos"),
+    repository = c(NA_character_, NA_character_, "CRAN", "@CRAN@"),
+    stringsAsFactors = FALSE
   )
-  for (case_name in names(custom_metadata_cases)) {
-    metadata_name <- custom_metadata_cases[[case_name]]
+  for (case_index in seq_len(nrow(custom_metadata_cases))) {
+    metadata_name <- custom_metadata_cases$metadata[[case_index]]
+    repository_name <- custom_metadata_cases$repository[[case_index]]
     custom_metadata_status <- function(pkg, lib) {
       result <- data.frame(
         package = pkg,
         remotepkgref = rep(NA_character_, length(pkg)),
         repotype = rep(NA_character_, length(pkg)),
-        repository = rep(NA_character_, length(pkg)),
+        repository = rep(repository_name, length(pkg)),
         stringsAsFactors = FALSE
       )
       result[[metadata_name]] <- rep(custom_repo, length(pkg))
@@ -541,6 +543,7 @@ local({
       captured$repos,
       c(INTERNAL = custom_repo, CRAN = requested_repo)
     ))
+    stopifnot(identical(captured$pkg, "alpha"))
   }
 
   unsafe_status <- function(pkg, lib) {

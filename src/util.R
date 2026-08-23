@@ -554,14 +554,20 @@ status_repositories <- function(status) {
     repositories <- rep(NA_character_, nrow(status))
   }
   repositories <- as.character(repositories)
+  missing <- is.na(repositories) | !nzchar(repositories)
+  cran_markers <- !missing &
+    tolower(repositories) %in% c("cran", "@cran@")
   for (column in c("remoterepos", "RemoteRepos")) {
     values <- status[[column]]
     if (is.null(values)) {
       next
     }
     values <- as.character(values)
-    missing <- is.na(repositories) | !nzchar(repositories)
-    repositories[missing] <- values[missing]
+    available <- !is.na(values) & nzchar(values)
+    replace <- available & (missing | cran_markers)
+    repositories[replace] <- values[replace]
+    missing[replace] <- FALSE
+    cran_markers[replace] <- FALSE
   }
   repositories
 }
