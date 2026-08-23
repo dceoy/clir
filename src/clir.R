@@ -40,7 +40,7 @@ Arguments:
     <url>...            A CRAN repository URL
     <pkg>...            R package names or pak package references"
 
-clir_version <- "v1.2.1"
+clir_version <- "v2.0.0"
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
