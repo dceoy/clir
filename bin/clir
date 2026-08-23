@@ -1,1 +1,152 @@
-../src/clir.R
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_path=$(realpath "${BASH_SOURCE[0]}")
+clir_root=$(realpath "$(dirname "${script_path}")/..")
+
+# R synthesizes R_LIBS_USER during startup. Set the managed default before
+# starting R so the launcher and the installer use the same library. An
+# explicit R_LIBS_USER remains authoritative. R combines R_LIBS before
+# R_LIBS_USER, so selecting R_LIBS does not require discarding the user tree.
+function read_r_library_env {
+  local startup_mode="${1:-normal}"
+  # shellcheck disable=SC2016
+  local r_code='
+    libs <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
+    version <- paste(
+      R.version$major,
+      strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+      sep = "."
+    );
+    arch <- sub("^/", "", Sys.getenv("R_ARCH"));
+    env_names <- if (nzchar(arch)) {
+      c(paste0(".Renviron.", arch), ".Renviron")
+    } else {
+      ".Renviron"
+    };
+    site_file <- Sys.getenv("R_ENVIRON", unset = NA_character_);
+    site_files <- if (is.na(site_file)) {
+      candidates <- file.path(R.home("etc"), "Renviron.site");
+      if (nzchar(arch)) {
+        candidates <- c(file.path(R.home("etc"), arch, "Renviron.site"), candidates);
+      }
+      existing <- candidates[file.exists(candidates)];
+      if (length(existing)) existing[[1L]] else character()
+    } else if (nzchar(site_file)) {
+      path.expand(site_file)
+    } else {
+      character()
+    };
+    user_file <- Sys.getenv("R_ENVIRON_USER", unset = NA_character_);
+    user_files <- if (is.na(user_file)) {
+      candidates <- c(
+        file.path(getwd(), env_names),
+        file.path(path.expand("~"), env_names)
+      );
+      existing <- candidates[file.exists(candidates)];
+      if (length(existing)) existing[[1L]] else character()
+    } else if (nzchar(user_file)) {
+      path.expand(user_file)
+    } else {
+      character()
+    };
+    env_files <- unique(c(site_files, user_files));
+    has_library_assignment <- any(vapply(
+      env_files,
+      function(path) {
+        if (!file.exists(path)) return(FALSE);
+        lines <- tryCatch(readLines(path, warn = FALSE), error = function(...) character());
+        any(grepl("^[[:space:]]*(R_LIBS|R_LIBS_USER)[[:space:]]*=", lines));
+      },
+      logical(1)
+    ));
+    cat(paste(c(libs, version, as.integer(has_library_assignment)), collapse = "\034"));
+  '
+  case "${startup_mode}" in
+    'normal' )
+      # shellcheck disable=SC2016
+      env -u R_LIBS -u R_LIBS_USER \
+        R --no-site-file --no-init-file --no-save --no-restore --no-echo \
+        --slave -e "${r_code}"
+      ;;
+    'vanilla' )
+      # shellcheck disable=SC2016
+      env -u R_LIBS -u R_LIBS_USER R --vanilla --slave -e "${r_code}"
+      ;;
+    * )
+      echo "Unknown R startup probe mode: ${startup_mode}" >&2
+      return 2
+      ;;
+  esac
+}
+
+function use_r_startup_library {
+  local separator=$'\034'
+  local startup_env startup_rest startup_version_rest
+  local vanilla_env vanilla_rest
+  local startup_r_libs startup_r_libs_user vanilla_r_libs vanilla_r_libs_user
+  local startup_has_library_assignment
+  startup_env=$(read_r_library_env 'normal')
+  startup_r_libs="${startup_env%%"${separator}"*}"
+  startup_rest="${startup_env#*"${separator}"}"
+  startup_r_libs_user="${startup_rest%%"${separator}"*}"
+  startup_version_rest="${startup_rest#*"${separator}"}"
+  r_version="${startup_version_rest%%"${separator}"*}"
+  startup_has_library_assignment="${startup_version_rest#*"${separator}"}"
+
+  vanilla_env=$(read_r_library_env 'vanilla')
+  vanilla_r_libs="${vanilla_env%%"${separator}"*}"
+  vanilla_rest="${vanilla_env#*"${separator}"}"
+  vanilla_r_libs_user="${vanilla_rest%%"${separator}"*}"
+
+  if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
+    "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
+    export R_LIBS="${startup_r_libs}"
+    return 0
+  fi
+  if [[ -n "${startup_r_libs_user}" &&
+    "${startup_r_libs_user}" != 'NULL' &&
+    "${startup_r_libs_user}" != "${vanilla_r_libs_user}" ]]; then
+    export R_LIBS_USER="${startup_r_libs_user}"
+    return 0
+  fi
+
+  # A startup-file assignment can intentionally equal R's synthesized
+  # default. The normal probe preserves conditional expansion semantics, and
+  # the R-side assignment flag distinguishes that case from an untouched
+  # default without injecting a value into the expansion.
+  if [[ "${startup_has_library_assignment}" = 1 ]]; then
+    if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' ]]; then
+      export R_LIBS="${startup_r_libs}"
+      return 0
+    fi
+    if [[ -n "${startup_r_libs_user}" &&
+      "${startup_r_libs_user}" != 'NULL' ]]; then
+      export R_LIBS_USER="${startup_r_libs_user}"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+r_version=''
+if [[ -n "${R_LIBS_USER:-}" && "${R_LIBS_USER:-}" != 'NULL' ]]; then
+  :
+elif [[ -n "${R_LIBS:-}" && "${R_LIBS:-}" != 'NULL' ]]; then
+  export R_LIBS
+elif use_r_startup_library; then
+  :
+else
+  [[ -n "${r_version}" ]] || {
+    echo 'Failed to determine the R version.' >&2
+    exit 1
+  }
+  export R_LIBS_USER="${clir_root}/r/${r_version}/library"
+fi
+
+# Keep the probe-selected library stable if a runtime profile changes the
+# public R_LIBS variables before src/clir.R resolves the package library.
+export CLIR_R_LIBS="${R_LIBS-}"
+export CLIR_R_LIBS_USER="${R_LIBS_USER-}"
+exec Rscript "${clir_root}/src/clir.R" "$@"

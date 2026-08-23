@@ -24,7 +24,7 @@ on:
       r-version:
         required: false
         type: string
-        description: R version to use
+        description: R version to use for the manually selected workflow
         default: release
 permissions:
   contents: read
@@ -38,34 +38,66 @@ jobs:
       github.event_name == 'push'
       || github.event_name == 'pull_request'
       || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
+    strategy:
+      fail-fast: false
+      matrix:
+        r-version: [devel, release, oldrel-1]
     permissions:
       contents: read
     uses: dceoy/gha-for-devops/.github/workflows/r-package-lint.yml@main  # zizmor: ignore[unpinned-uses]
     with:
       package-path: .
-      r-version: ${{ inputs.r-version || 'release' }}
+      r-version: ${{ matrix.r-version }}
       runs-on: ubuntu-latest
       r-libs-user: /usr/local/lib/R/site-library
       lint-package: false
-  format-and-pr:
+  r-tests:
     if: >
-      github.event_name == 'pull_request'
-      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'format')
-    permissions:
-      contents: write
-      pull-requests: write
-    uses: dceoy/gha-for-devops/.github/workflows/r-package-format-and-pr.yml@main  # zizmor: ignore[unpinned-uses]
-    with:
-      package-path: .
-      r-version: ${{ inputs.r-version || 'release' }}
-      runs-on: ubuntu-latest
-      format-package: false
+      github.event_name == 'push'
+      || github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
+    strategy:
+      fail-fast: false
+      matrix:
+        r-version: [devel, release, oldrel-1]
+    runs-on: ubuntu-latest
+    env:
+      CLIR_SOURCE_DIR: ${{ github.workspace }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up R
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6  # v2.12.1
+        with:
+          r-version: ${{ matrix.r-version }}
+          use-public-rspm: true
+      - name: Install pak system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libcurl4-openssl-dev
+      - name: Install clir from the checkout
+        run: |
+          # shellcheck disable=SC2016
+          r_version=$(R --vanilla --slave -e 'cat(paste(R.version$major, strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."))')
+          export R_LIBS_USER="${GITHUB_WORKSPACE}/r/${r_version}/library"
+          echo "R_LIBS_USER=${R_LIBS_USER}" >> "${GITHUB_ENV}"
+          echo "PATH=${GITHUB_WORKSPACE}/bin:${PATH}" >> "${GITHUB_ENV}"
+          ./install_clir.sh
+      - name: Run focused regression tests
+        run: |
+          Rscript tests/test_util.R
+          bash tests/test_cli.sh
   cli-test:
     if: >
       github.event_name == 'push'
       || github.event_name == 'pull_request'
       || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'lint-and-test')
     runs-on: macos-latest
+    env:
+      CLIR_SOURCE_DIR: ${{ github.workspace }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -79,43 +111,56 @@ jobs:
           use-public-rspm: true
       - name: Set environment variables
         run: |
-          {
-            echo "PATH=${HOME}/.clir/bin:${PATH}";
-            echo "R_LIBS_USER=${HOME}/.clir/r/library";
-          } >> "${GITHUB_ENV}"
+          # shellcheck disable=SC2016
+          r_version=$(R --vanilla --slave -e 'cat(paste(R.version$major, strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1], sep = "."))')
+          export R_LIBS_USER="${GITHUB_WORKSPACE}/r/${r_version}/library"
+          echo "PATH=${GITHUB_WORKSPACE}/bin:${PATH}" >> "${GITHUB_ENV}"
+          echo "R_LIBS_USER=${R_LIBS_USER}" >> "${GITHUB_ENV}"
       - name: Install clir
-        run: |
-          ./install_clir.sh
+        run: ./install_clir.sh
       - name: Test configuration
         run: |
           clir --version
           clir config
           clir cran --list
           clir cran https://cran.ism.ac.jp/
-          clir drat dmlc
           clir config
           clir config --init
       - name: Test installation
         run: |
           clir update
           clir install foreach doParallel tidyverse
-          clir install --devt=cran foreach doParallel tidyverse
+          clir install cran::foreach cran::doParallel
           clir validate foreach doParallel tidyverse
           clir session foreach doParallel tidyverse
       - name: Test uninstallation
         run: |
           clir uninstall foreach doSNOW
-          [[ ! -d "${HOME}/.clir/r/library/foreach" ]]
-          [[ ! -d "${HOME}/.clir/r/library/doSNOW" ]]
+          [[ ! -d "${R_LIBS_USER}/foreach" ]]
+          [[ ! -d "${R_LIBS_USER}/doSNOW" ]]
       - name: Test downloading
         run: |
           clir download tidyverse gridExtra
           ls -l tidyverse* gridExtra*
+  format-and-pr:
+    if: >
+      github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && inputs.workflow == 'format')
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: dceoy/gha-for-devops/.github/workflows/r-package-format-and-pr.yml@main  # zizmor: ignore[unpinned-uses]
+    with:
+      package-path: .
+      r-version: ${{ inputs.r-version || 'release' }}
+      runs-on: ubuntu-latest
+      format-package: false
   dependabot-auto-merge:
     if: >
       github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
     needs:
       - r-lint
+      - r-tests
       - cli-test
     permissions:
       contents: write
