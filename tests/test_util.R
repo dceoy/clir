@@ -364,6 +364,11 @@ local({
       installed = "github::owner/alpha",
       expected = character()
     ),
+    prefixed_url = list(
+      reference = "https://github.com/owner/alpha",
+      installed = "github::https://github.com/owner/alpha",
+      expected = character()
+    ),
     trailing_url = list(
       reference = "https://github.com/owner/alpha/",
       installed = "github::owner/alpha",

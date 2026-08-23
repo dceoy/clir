@@ -119,8 +119,8 @@ if [[ "${args}" != *'--no-environ'* &&
 fi
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
-  -f "${HOME}/.Rprofile" &&
-  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile" ]]; then
+  -f "${HOME}/.Rprofile" ]] &&
+  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile"; then
   printf 'profile-noise'
   touch "${CLIR_TEST_PROBE_MARKER}"
 fi
@@ -154,8 +154,8 @@ set -euo pipefail
 args=" $* "
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
-  -f "${HOME}/.Rprofile" &&
-  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile" ]]; then
+  -f "${HOME}/.Rprofile" ]] &&
+  grep -Fq 'CLIR_TEST_PROFILE=enabled' "${HOME}/.Rprofile"; then
   touch "${CLIR_TEST_PROFILE_MARKER}"
 fi
 [[ "${R_LIBS_USER:-}" = "${CLIR_TEST_ENV_LIBRARY}" ]]

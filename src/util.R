@@ -441,7 +441,9 @@ canonical_ref <- function(ref) {
   if (grepl("^github::", ref, ignore.case = TRUE)) {
     ref <- sub("^github::", "", ref, ignore.case = TRUE)
     ref <- sub("/+$", "", ref)
-    return(paste0("github::", ref))
+    if (!grepl("^https?://github\\.com/", ref, ignore.case = TRUE)) {
+      return(paste0("github::", ref))
+    }
   }
   if (grepl("^https?://github\\.com/", ref, ignore.case = TRUE)) {
     ref <- sub("^https?://github\\.com/", "", ref, ignore.case = TRUE)
