@@ -123,7 +123,8 @@ make_clir_dirs <- function(clir_root_dir, r_lib = NULL,
     r_lib <- default_r_library(root, r_version = r_version)
   }
   paths <- unique(c(file.path(root, "r"), normalizePath(
-    path.expand(r_lib), mustWork = FALSE
+    path.expand(r_lib),
+    mustWork = FALSE
   )))
   for (path in paths) {
     dir.create(
