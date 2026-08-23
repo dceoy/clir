@@ -193,7 +193,7 @@ run_cli() {
   env "${cli_env[@]}" "${cli}" "${@}"
 }
 
-run_cli --version | grep -Fq 'v1.2.1'
+run_cli --version | grep -Fq 'v2.0.0'
 help_output=$(run_cli --help)
 grep -Fq 'pak' <<<"${help_output}"
 if grep -Eq 'drat|--devt|--bioc' <<<"${help_output}"; then
