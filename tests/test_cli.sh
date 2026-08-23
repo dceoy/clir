@@ -153,6 +153,7 @@ cat >"${installer_fake_bin}/Rscript" <<'EOF'
 set -euo pipefail
 args=" $* "
 [[ "${args}" != *' -d '* ]]
+[[ "${CLIR_R_LIBS_USER:-}" = "${CLIR_TEST_ENV_LIBRARY}" ]]
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
   -f "${HOME}/.Rprofile" ]] &&

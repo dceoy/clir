@@ -64,7 +64,22 @@ fetch_clir_root <- function() {
 main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
   clir_root_dir <- normalizePath(path.expand(clir_root_dir), mustWork = FALSE)
   util <- source(file.path(clir_root_dir, "src/util.R"))
-  r_lib <- resolve_r_library(clir_root_dir = clir_root_dir, r_lib = r_lib)
+  startup_env <- Sys.getenv(c("CLIR_R_LIBS", "CLIR_R_LIBS_USER"))
+  names(startup_env) <- c("R_LIBS", "R_LIBS_USER")
+  if (is.null(r_lib)) {
+    if (any(nzchar(startup_env))) {
+      r_lib <- resolve_r_library(
+        clir_root_dir = clir_root_dir,
+        env = startup_env
+      )
+    } else {
+      r_lib <- normalizePath(.libPaths()[[1L]], mustWork = FALSE)
+    }
+  } else {
+    r_lib <- resolve_r_library(clir_root_dir = clir_root_dir, r_lib = r_lib)
+  }
+  make_clir_dirs(clir_root_dir = clir_root_dir, r_lib = r_lib)
+  .libPaths(unique(c(r_lib, .libPaths())))
   ncpus <- ifelse(
     is.null(args[["--cpus"]]),
     parallel::detectCores(),
@@ -84,7 +99,6 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
     ),
     src = util$value
   )
-  make_clir_dirs(clir_root_dir = clir_root_dir, r_lib = r_lib)
   clir_yml <- file.path(clir_root_dir, "r/clir.yml")
   repos <- load_repos(clir_yml = clir_yml, quiet = args[["--quiet"]])
   options(repos = repos)

@@ -69,4 +69,8 @@ else
   export R_LIBS_USER="${clir_root}/r/${r_version}/library"
 fi
 
+# Keep the probe-selected library stable if a runtime profile changes the
+# public R_LIBS variables before src/clir.R resolves the package library.
+export CLIR_R_LIBS="${R_LIBS-}"
+export CLIR_R_LIBS_USER="${R_LIBS_USER-}"
 exec Rscript "${clir_root}/src/clir.R" "$@"
