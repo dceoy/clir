@@ -88,62 +88,164 @@ git --version || abort 'Git is not found.'
 echo
 
 function read_r_library_env {
-  local marker_r_libs="${1}"
-  local marker_r_libs_user="${2}"
+  local startup_mode="${1:-normal}"
   # shellcheck disable=SC2016
-  R_LIBS="${marker_r_libs}" R_LIBS_USER="${marker_r_libs_user}" \
-    R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
-      libs <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
-      version <- paste(
-        R.version$major,
-        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
-        sep = "."
+  local r_code='
+    libs <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
+    version <- paste(
+      R.version$major,
+      strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+      sep = "."
+    );
+    arch <- sub("^/", "", Sys.getenv("R_ARCH"));
+    env_names <- if (nzchar(arch)) {
+      c(paste0(".Renviron.", arch), ".Renviron")
+    } else {
+      ".Renviron"
+    };
+    site_file <- Sys.getenv("R_ENVIRON", unset = NA_character_);
+    site_files <- if (is.na(site_file)) {
+      candidates <- file.path(R.home("etc"), "Renviron.site");
+      if (nzchar(arch)) {
+        candidates <- c(file.path(R.home("etc"), arch, "Renviron.site"), candidates);
+      }
+      existing <- candidates[file.exists(candidates)];
+      if (length(existing)) existing[[1L]] else character()
+    } else if (nzchar(site_file)) {
+      path.expand(site_file)
+    } else {
+      character()
+    };
+    user_file <- Sys.getenv("R_ENVIRON_USER", unset = NA_character_);
+    user_files <- if (is.na(user_file)) {
+      candidates <- c(
+        file.path(getwd(), env_names),
+        file.path(path.expand("~"), env_names)
       );
-      cat(paste(c(libs, version), collapse = "\034"));
-    '
+      existing <- candidates[file.exists(candidates)];
+      if (length(existing)) existing[[1L]] else character()
+    } else if (nzchar(user_file)) {
+      path.expand(user_file)
+    } else {
+      character()
+    };
+    env_files <- unique(c(site_files, user_files));
+    has_library_assignment <- any(vapply(
+      env_files,
+      function(path) {
+        if (!file.exists(path)) return(FALSE);
+        lines <- tryCatch(readLines(path, warn = FALSE), error = function(...) character());
+        any(grepl("^[[:space:]]*(R_LIBS|R_LIBS_USER)[[:space:]]*=", lines));
+      },
+      logical(1)
+    ));
+    cat(paste(c(libs, version, as.integer(has_library_assignment)), collapse = "\034"));
+  '
+  case "${startup_mode}" in
+    'normal' )
+      # shellcheck disable=SC2016
+      env -u R_LIBS -u R_LIBS_USER \
+        R --no-site-file --no-init-file --no-save --no-restore --no-echo \
+        --slave -e "${r_code}"
+      ;;
+    'vanilla' )
+      # shellcheck disable=SC2016
+      env -u R_LIBS -u R_LIBS_USER R --vanilla --slave -e "${r_code}"
+      ;;
+    * )
+      echo "Unknown R startup probe mode: ${startup_mode}" >&2
+      return 2
+      ;;
+  esac
 }
 
 function use_r_startup_library {
   local separator=$'\034'
-  local marker_r_libs="__clir_r_libs_probe_$$"
-  local marker_r_libs_user="__clir_r_libs_user_probe_$$"
-  local startup_env startup_rest
-  local startup_r_libs startup_r_libs_user
-  startup_env=$(read_r_library_env "${marker_r_libs}" "${marker_r_libs_user}")
+  local startup_env startup_rest startup_version_rest
+  local vanilla_env vanilla_rest
+  local startup_r_libs startup_r_libs_user vanilla_r_libs vanilla_r_libs_user
+  local startup_has_library_assignment
+  startup_env=$(read_r_library_env 'normal')
   startup_r_libs="${startup_env%%"${separator}"*}"
   startup_rest="${startup_env#*"${separator}"}"
   startup_r_libs_user="${startup_rest%%"${separator}"*}"
-  R_VERSION="${startup_rest#*"${separator}"}"
+  startup_version_rest="${startup_rest#*"${separator}"}"
+  R_VERSION="${startup_version_rest%%"${separator}"*}"
+  startup_has_library_assignment="${startup_version_rest#*"${separator}"}"
+
+  vanilla_env=$(read_r_library_env 'vanilla')
+  vanilla_r_libs="${vanilla_env%%"${separator}"*}"
+  vanilla_rest="${vanilla_env#*"${separator}"}"
+  vanilla_r_libs_user="${vanilla_rest%%"${separator}"*}"
 
   if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
-    "${startup_r_libs}" != "${marker_r_libs}" ]]; then
+    "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
     export R_LIBS="${startup_r_libs}"
     export R_LIBS_USER='NULL'
     return 0
   fi
   if [[ -n "${startup_r_libs_user}" &&
     "${startup_r_libs_user}" != 'NULL' &&
-    "${startup_r_libs_user}" != "${marker_r_libs_user}" ]]; then
+    "${startup_r_libs_user}" != "${vanilla_r_libs_user}" ]]; then
     export R_LIBS_USER="${startup_r_libs_user}"
     return 0
+  fi
+
+  # A startup-file assignment can intentionally equal R's synthesized
+  # default. The normal probe preserves conditional expansion semantics, and
+  # the R-side assignment flag distinguishes that case from an untouched
+  # default without injecting a value into the expansion.
+  if [[ "${startup_has_library_assignment}" = 1 ]]; then
+    if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' ]]; then
+      export R_LIBS="${startup_r_libs}"
+      export R_LIBS_USER='NULL'
+      return 0
+    fi
+    if [[ -n "${startup_r_libs_user}" &&
+      "${startup_r_libs_user}" != 'NULL' ]]; then
+      export R_LIBS_USER="${startup_r_libs_user}"
+      return 0
+    fi
   fi
   return 1
 }
 
 function resolve_r_lib {
-  # R expands R_LIBS_USER conversion specifiers during normal startup.
+  # Resolve conversion specifiers without loading user-controlled startup
+  # files. The shared utility keeps this in sync with src/clir.R.
   # shellcheck disable=SC2016
-  R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
-    paths <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
-    paths <- paths[nzchar(paths) & paths != "NULL"];
-    if (length(paths) == 0L) stop("No R library path is configured.");
-    path <- strsplit(paths[[1L]], .Platform$path.sep, fixed = TRUE)[[1L]][[1L]];
-    cat(normalizePath(path.expand(path), mustWork = FALSE));
+  CLIR_ROOT="${CLIR_ROOT}" R --vanilla --slave -e '
+    source(file.path(Sys.getenv("CLIR_ROOT"), "src", "util.R"));
+    env <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
+    names(env) <- c("R_LIBS", "R_LIBS_USER");
+    cat(resolve_r_library(
+      clir_root_dir = Sys.getenv("CLIR_ROOT"),
+      env = env
+    ));
   '
 }
 
 set +u
-if [[ -n "${R_LIBS_USER}" && "${R_LIBS_USER}" != 'NULL' ]]; then
+if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
+  if [[ -n "${R_LIBS_USER}" && "${R_LIBS_USER}" != 'NULL' ]]; then
+    export R_LIBS_USER
+  elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
+    export R_LIBS
+    export R_LIBS_USER='NULL'
+  else
+    # Root installation must not derive a privileged library from user
+    # startup files. Use the R version from an isolated probe instead.
+    # shellcheck disable=SC2016
+    R_VERSION=$(R --vanilla --slave -e '
+      cat(paste(
+        R.version$major,
+        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+        sep = "."
+      ))
+    ')
+    export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
+  fi
+elif [[ -n "${R_LIBS_USER}" && "${R_LIBS_USER}" != 'NULL' ]]; then
   export R_LIBS_USER
 elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
   # Prevent R from synthesizing a higher-priority R_LIBS_USER path.
@@ -194,7 +296,8 @@ if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
   ln -sf "${CLIR_ROOT}/bin/clir" /usr/local/bin/clir
 fi
 CLIR_CRAN_URL="${CRAN_URL}" CLIR_REINSTALL="${REINSTALL}" \
-  R --no-site-file --no-init-file --no-save --no-restore --no-echo -q <<'EOF' || abort 'Package installation failed.'
+  R --no-environ --no-site-file --no-init-file --no-save --no-restore \
+    --no-echo -q <<'EOF' || abort 'Package installation failed.'
 options(repos = c(CRAN = Sys.getenv("CLIR_CRAN_URL")));
 pkgs <- c('docopt', 'yaml', 'pak');
 reinstall <- identical(Sys.getenv("CLIR_REINSTALL"), "1");
@@ -215,8 +318,17 @@ EOF
 echo
 
 echo '>>> Validate installed packages'
-"${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
-"${CLIR_ROOT}/bin/clir" validate docopt yaml pak
+if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
+  R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null \
+    R_PROFILE=/dev/null R_PROFILE_USER=/dev/null \
+    "${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
+  R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null \
+    R_PROFILE=/dev/null R_PROFILE_USER=/dev/null \
+    "${CLIR_ROOT}/bin/clir" validate docopt yaml pak
+else
+  "${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
+  "${CLIR_ROOT}/bin/clir" validate docopt yaml pak
+fi
 echo
 
 echo '>>> Done.'

@@ -61,7 +61,7 @@ fetch_clir_root <- function() {
   }
 }
 
-main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
+initialize_clir <- function(clir_root_dir = fetch_clir_root(), r_lib = NULL) {
   clir_root_dir <- normalizePath(path.expand(clir_root_dir), mustWork = FALSE)
   util <- source(file.path(clir_root_dir, "src/util.R"))
   startup_env <- Sys.getenv(c("CLIR_R_LIBS", "CLIR_R_LIBS_USER"))
@@ -80,6 +80,24 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
   }
   make_clir_dirs(clir_root_dir = clir_root_dir, r_lib = r_lib)
   .libPaths(unique(c(r_lib, .libPaths())))
+  list(
+    clir_root_dir = clir_root_dir,
+    r_lib = r_lib,
+    util = util$value
+  )
+}
+
+main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL,
+                 initialized = NULL) {
+  if (is.null(initialized)) {
+    initialized <- initialize_clir(
+      clir_root_dir = clir_root_dir,
+      r_lib = r_lib
+    )
+  }
+  clir_root_dir <- initialized$clir_root_dir
+  r_lib <- initialized$r_lib
+  util <- initialized$util
   ncpus <- ifelse(
     is.null(args[["--cpus"]]),
     parallel::detectCores(),
@@ -97,7 +115,7 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
       character.only = TRUE,
       quietly = (!args[["-v"]])
     ),
-    src = util$value
+    src = util
   )
   clir_yml <- file.path(clir_root_dir, "r/clir.yml")
   repos <- load_repos(clir_yml = clir_yml, quiet = args[["--quiet"]])
@@ -148,10 +166,11 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL) {
 }
 
 if (!interactive()) {
+  initialized <- initialize_clir()
   args <- docopt::docopt(doc, version = clir_version)
   if (args[["--quiet"]]) {
-    suppressMessages(main(args = args))
+    suppressMessages(main(args = args, initialized = initialized))
   } else {
-    main(args = args)
+    main(args = args, initialized = initialized)
   }
 }
