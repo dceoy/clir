@@ -43,6 +43,7 @@ SYSTEM_INSTALL=0
 REINSTALL=0
 CRAN_URL='https://cloud.r-project.org/'
 DELETE_R_LIB=0
+R_VERSION=''
 
 while [[ ${#} -ge 1 ]]; do
   case "${1}" in
@@ -87,41 +88,42 @@ git --version || abort 'Git is not found.'
 echo
 
 function read_r_library_env {
-  local startup_mode="${1:-}"
-  if [[ "${startup_mode}" = '--vanilla' ]]; then
-    # shellcheck disable=SC2016
-    R --vanilla --slave -e '
-      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
-    '
-  else
-    # shellcheck disable=SC2016
+  local marker_r_libs="${1}"
+  local marker_r_libs_user="${2}"
+  # shellcheck disable=SC2016
+  R_LIBS="${marker_r_libs}" R_LIBS_USER="${marker_r_libs_user}" \
     R --no-site-file --no-init-file --no-save --no-restore --no-echo --slave -e '
-      cat(paste(Sys.getenv(c("R_LIBS", "R_LIBS_USER")), collapse = "\034"));
+      libs <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"));
+      version <- paste(
+        R.version$major,
+        strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
+        sep = "."
+      );
+      cat(paste(c(libs, version), collapse = "\034"));
     '
-  fi
 }
 
 function use_r_startup_library {
   local separator=$'\034'
-  local startup_env vanilla_env
+  local marker_r_libs="__clir_r_libs_probe_$$"
+  local marker_r_libs_user="__clir_r_libs_user_probe_$$"
+  local startup_env startup_rest
   local startup_r_libs startup_r_libs_user
-  local vanilla_r_libs vanilla_r_libs_user
-  startup_env=$(read_r_library_env)
-  vanilla_env=$(read_r_library_env --vanilla)
+  startup_env=$(read_r_library_env "${marker_r_libs}" "${marker_r_libs_user}")
   startup_r_libs="${startup_env%%"${separator}"*}"
-  startup_r_libs_user="${startup_env#*"${separator}"}"
-  vanilla_r_libs="${vanilla_env%%"${separator}"*}"
-  vanilla_r_libs_user="${vanilla_env#*"${separator}"}"
+  startup_rest="${startup_env#*"${separator}"}"
+  startup_r_libs_user="${startup_rest%%"${separator}"*}"
+  R_VERSION="${startup_rest#*"${separator}"}"
 
   if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
-    "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
+    "${startup_r_libs}" != "${marker_r_libs}" ]]; then
     export R_LIBS="${startup_r_libs}"
     export R_LIBS_USER='NULL'
     return 0
   fi
   if [[ -n "${startup_r_libs_user}" &&
     "${startup_r_libs_user}" != 'NULL' &&
-    "${startup_r_libs_user}" != "${vanilla_r_libs_user}" ]]; then
+    "${startup_r_libs_user}" != "${marker_r_libs_user}" ]]; then
     export R_LIBS_USER="${startup_r_libs_user}"
     return 0
   fi
@@ -150,14 +152,7 @@ elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
 elif use_r_startup_library; then
   :
 else
-  # shellcheck disable=SC2016
-  R_VERSION=$(R --vanilla --slave -e '
-    cat(paste(
-      R.version$major,
-      strsplit(R.version$minor, ".", fixed = TRUE)[[1]][1],
-      sep = "."
-    ))
-  ')
+  [[ -n "${R_VERSION}" ]] || abort 'Failed to determine the R version.'
   export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
 fi
 set -u

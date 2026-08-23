@@ -17,21 +17,45 @@ fake_bin="${test_root}/fake-bin"
 mkdir -p "${fake_bin}"
 cat >"${fake_bin}/R" <<'EOF'
 #!/usr/bin/env bash
-printf '4.3'
+set -euo pipefail
+args=" $* "
+printf 'R\n' >>"${CLIR_TEST_PROBE_COUNT:-/dev/null}"
+startup_r_libs="${R_LIBS-}"
+startup_r_libs_user="${R_LIBS_USER-}"
+if [[ "${args}" != *'--no-environ'* &&
+  "${args}" != *'--vanilla'* &&
+  -f "${HOME}/.Renviron" ]]; then
+  renviron_r_libs=$(sed -ne 's/^R_LIBS=//p' "${HOME}/.Renviron")
+  renviron_r_libs_user=$(sed -ne 's/^R_LIBS_USER=//p' "${HOME}/.Renviron")
+  [[ -z "${renviron_r_libs}" ]] || startup_r_libs="${renviron_r_libs}"
+  [[ -z "${renviron_r_libs_user}" ]] || startup_r_libs_user="${renviron_r_libs_user}"
+fi
+if [[ "${args}" = *' -e '* ]]; then
+  printf '%s\034%s\0344.3' "${startup_r_libs}" "${startup_r_libs_user}"
+else
+  printf 'R version 4.3.0\n'
+fi
 EOF
 cat >"${fake_bin}/Rscript" <<'EOF'
 #!/usr/bin/env bash
+printf 'Rscript\n' >>"${CLIR_TEST_PROBE_COUNT:-/dev/null}"
 printf '%s\n' "${R_LIBS_USER-UNSET}" >"${CLIR_TEST_RECORD}"
 printf '%s\n' "${R_LIBS-UNSET}" >>"${CLIR_TEST_RECORD}"
 EOF
 chmod +x "${fake_bin}/R" "${fake_bin}/Rscript"
 
 launcher_record="${test_root}/launcher-env"
+launcher_probe_count="${test_root}/launcher-probes"
+: >"${launcher_probe_count}"
 env -u R_LIBS_USER -u R_LIBS \
+  HOME="${test_root}" \
   CLIR_TEST_RECORD="${launcher_record}" \
+  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
 grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
+[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 1 ]]
+[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
 
 probe_root="${test_root}/default-library-probe"
 mkdir -p "${probe_root}/bin" "${probe_root}/src"
@@ -56,35 +80,65 @@ env -u R_LIBS_USER -u R_LIBS \
   CLIR_EXPECTED_LIBRARY="${probe_library}" \
   "${probe_root}/bin/clir" --version
 
+: >"${launcher_probe_count}"
 env -u R_LIBS \
   R_LIBS_USER='NULL' \
+  HOME="${test_root}" \
   CLIR_TEST_RECORD="${launcher_record}" \
+  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
 grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
+[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 1 ]]
+[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
 
+: >"${launcher_probe_count}"
 env R_LIBS_USER='NULL' R_LIBS='NULL' \
+  HOME="${test_root}" \
   CLIR_TEST_RECORD="${launcher_record}" \
+  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
 grep -Fxq "${test_root}/r/4.3/library" "${launcher_record}"
+[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 1 ]]
+[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
 
 explicit_user="${test_root}/explicit-user"
+: >"${launcher_probe_count}"
 env -u R_LIBS \
   R_LIBS_USER="${explicit_user}" \
+  HOME="${test_root}" \
   CLIR_TEST_RECORD="${launcher_record}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
 grep -Fxq "${explicit_user}" "${launcher_record}"
+[[ ! -s "${launcher_probe_count}" ]]
 
 explicit_r_lib="${test_root}/explicit-r"
+: >"${launcher_probe_count}"
 env -u R_LIBS_USER \
   R_LIBS="${explicit_r_lib}" \
+  HOME="${test_root}" \
   CLIR_TEST_RECORD="${launcher_record}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
 [[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = "${explicit_r_lib}" ]]
+[[ ! -s "${launcher_probe_count}" ]]
+
+same_default_user=$(env -u R_LIBS_USER -u R_LIBS HOME="${test_root}" \
+  R --vanilla --slave -e 'cat(normalizePath(Sys.getenv("R_LIBS_USER"), mustWork = FALSE))')
+printf 'R_LIBS_USER=%s\n' "${same_default_user}" >"${test_root}/.Renviron"
+: >"${launcher_probe_count}"
+env -u R_LIBS_USER -u R_LIBS \
+  HOME="${test_root}" \
+  CLIR_TEST_RECORD="${launcher_record}" \
+  CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
+  PATH="${fake_bin}:${PATH}" \
+  "${cli}" --version
+grep -Fxq "${same_default_user}" "${launcher_record}"
+[[ "$(grep -c '^R$' "${launcher_probe_count}")" = 1 ]]
+[[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
 
 installer_root="${test_root}/installer-source"
 installer_fake_bin="${test_root}/installer-fake-bin"
@@ -108,14 +162,24 @@ if [[ "${1:-}" = '--version' ]]; then
   exit 0
 fi
 args=" $* "
-startup_env_library="${CLIR_TEST_DEFAULT_LIBRARY}"
+startup_r_libs="${R_LIBS-}"
+startup_r_libs_user="${R_LIBS_USER-}"
 if [[ "${args}" != *'--no-environ'* &&
   "${args}" != *'--vanilla'* &&
   -f "${HOME}/.Renviron" ]]; then
-  renviron_library=$(sed -ne 's/^R_LIBS_USER=//p' "${HOME}/.Renviron")
-  if [[ -n "${renviron_library}" ]]; then
-    startup_env_library="${renviron_library}"
-  fi
+  renviron_r_libs=$(sed -ne 's/^R_LIBS=//p' "${HOME}/.Renviron")
+  renviron_r_libs_user=$(sed -ne 's/^R_LIBS_USER=//p' "${HOME}/.Renviron")
+  [[ -z "${renviron_r_libs}" ]] || startup_r_libs="${renviron_r_libs}"
+  [[ -z "${renviron_r_libs_user}" ]] || startup_r_libs_user="${renviron_r_libs_user}"
+fi
+if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
+  "${startup_r_libs}" != '__clir_r_libs_probe_'* ]]; then
+  resolved_library="${startup_r_libs}"
+elif [[ -n "${startup_r_libs_user}" && "${startup_r_libs_user}" != 'NULL' &&
+  "${startup_r_libs_user}" != '__clir_r_libs_user_probe_'* ]]; then
+  resolved_library="${startup_r_libs_user}"
+else
+  resolved_library="${CLIR_TEST_DEFAULT_LIBRARY}"
 fi
 if [[ "${args}" != *'--no-init-file'* &&
   "${args}" != *'--vanilla'* &&
@@ -125,18 +189,12 @@ if [[ "${args}" != *'--no-init-file'* &&
   touch "${CLIR_TEST_PROBE_MARKER}"
 fi
 if [[ "${args}" = *' -e '* ]]; then
-  if [[ "${args}" = *'R.version'* ]]; then
-    printf '4.3'
-  elif [[ "${args}" = *'collapse'* ]]; then
-    if [[ "${args}" = *'--vanilla'* ]]; then
-      printf '\034%s' "${CLIR_TEST_DEFAULT_LIBRARY}"
-    else
-      printf '\034%s' "${startup_env_library}"
-    fi
-  elif [[ "${args}" = *'paths <-'* && "${args}" = *'--vanilla'* ]]; then
-    printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
+  if [[ "${args}" = *'collapse'* && "${args}" = *'R.version'* ]]; then
+    printf '%s\034%s\0344.3' "${startup_r_libs}" "${startup_r_libs_user}"
   elif [[ "${args}" = *'paths <-'* ]]; then
-    printf '%s' "${startup_env_library}"
+    printf '%s' "${resolved_library}"
+  elif [[ "${args}" = *'R.version'* ]]; then
+    printf '4.3'
   elif [[ "${args}" = *'--vanilla'* ]]; then
     printf '%s' "${CLIR_TEST_MANAGED_LIBRARY}"
   else
@@ -181,6 +239,20 @@ PATH="${installer_fake_bin}:${PATH}" \
 [[ ! -e "${test_root}/probe-profile-marker" ]]
 [[ -f "${test_root}/runtime-profile-marker" ]]
 
+printf 'R_LIBS_USER=%s\n' "${installer_default_library}" >"${test_root}/.Renviron"
+env -u R_LIBS_USER -u R_LIBS \
+CLIR_SOURCE_DIR="${installer_root}" \
+CLIR_TEST_ENV_LIBRARY="${installer_default_library}" \
+CLIR_TEST_MANAGED_LIBRARY="${installer_managed_library}" \
+CLIR_TEST_DEFAULT_LIBRARY="${installer_default_library}" \
+CLIR_TEST_ENV_MARKER="${installer_marker}" \
+CLIR_TEST_MANAGED_MARKER="${test_root}/managed-marker" \
+CLIR_TEST_PROBE_MARKER="${test_root}/probe-profile-marker" \
+CLIR_TEST_PROFILE_MARKER="${test_root}/runtime-profile-marker" \
+HOME="${test_root}" \
+PATH="${installer_fake_bin}:${PATH}" \
+  "${installer_root}/install_clir.sh" --debug
+
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   cli_env=("R_LIBS_USER=${R_LIBS_USER}")
 elif [[ -n "${R_LIBS:-}" ]]; then
@@ -192,6 +264,8 @@ fi
 run_cli() {
   env "${cli_env[@]}" "${cli}" "${@}"
 }
+
+[[ "$(run_cli --version)" = 'v2.0.0' ]]
 
 help_output=$(run_cli --help)
 grep -Fq 'pak' <<<"${help_output}"
