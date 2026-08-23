@@ -181,7 +181,6 @@ function use_r_startup_library {
   if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' &&
     "${startup_r_libs}" != "${vanilla_r_libs}" ]]; then
     export R_LIBS="${startup_r_libs}"
-    export R_LIBS_USER='NULL'
     return 0
   fi
   if [[ -n "${startup_r_libs_user}" &&
@@ -198,7 +197,6 @@ function use_r_startup_library {
   if [[ "${startup_has_library_assignment}" = 1 ]]; then
     if [[ -n "${startup_r_libs}" && "${startup_r_libs}" != 'NULL' ]]; then
       export R_LIBS="${startup_r_libs}"
-      export R_LIBS_USER='NULL'
       return 0
     fi
     if [[ -n "${startup_r_libs_user}" &&
@@ -231,7 +229,6 @@ if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
     export R_LIBS_USER
   elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
     export R_LIBS
-    export R_LIBS_USER='NULL'
   else
     # Root installation must not derive a privileged library from user
     # startup files. Use the R version from an isolated probe instead.
@@ -248,9 +245,8 @@ if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
 elif [[ -n "${R_LIBS_USER}" && "${R_LIBS_USER}" != 'NULL' ]]; then
   export R_LIBS_USER
 elif [[ -n "${R_LIBS}" && "${R_LIBS}" != 'NULL' ]]; then
-  # Prevent R from synthesizing a higher-priority R_LIBS_USER path.
+  # R combines R_LIBS before R_LIBS_USER; preserve the user library.
   export R_LIBS
-  export R_LIBS_USER='NULL'
 elif use_r_startup_library; then
   :
 else
@@ -258,7 +254,6 @@ else
   export R_LIBS_USER="${CLIR_ROOT}/r/${R_VERSION}/library"
 fi
 set -u
-LIB_DIR=$(resolve_r_lib)
 
 if [[ -n "${CLIR_SOURCE_DIR:-}" ]]; then
   [[ -f "${CLIR_ROOT}/src/clir.R" ]] || abort "clir source not found: ${CLIR_ROOT}"
@@ -278,6 +273,8 @@ else
   fi
   echo
 fi
+
+LIB_DIR=$(resolve_r_lib)
 
 if [[ ${DELETE_R_LIB} -ne 0 ]]; then
   echo '>>> Delete the current clir-managed library'

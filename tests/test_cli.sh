@@ -162,7 +162,7 @@ env -u R_LIBS_USER \
   CLIR_TEST_PROBE_COUNT="${launcher_probe_count}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
-[[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
+[[ "$(sed -n '1p' "${launcher_record}")" != 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = "${explicit_r_lib}" ]]
 [[ "$(grep -c '^R$' "${launcher_probe_count}")" = 0 ]]
 [[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
@@ -206,7 +206,7 @@ env -u R_LIBS_USER -u R_LIBS \
   CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
-[[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
+[[ "$(sed -n '1p' "${launcher_record}")" != 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = 'conditional-r-default' ]]
 [[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
 [[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
@@ -221,7 +221,7 @@ env -u R_LIBS_USER -u R_LIBS \
   CLIR_TEST_VANILLA_USER="${conditional_system_user}" \
   PATH="${fake_bin}:${PATH}" \
   "${cli}" --version
-[[ "$(sed -n '1p' "${launcher_record}")" = 'NULL' ]]
+[[ "$(sed -n '1p' "${launcher_record}")" != 'NULL' ]]
 [[ "$(sed -n '2p' "${launcher_record}")" = 'conditional-r-default' ]]
 [[ "$(grep -c '^R$' "${launcher_probe_count}")" = 2 ]]
 [[ "$(grep -c '^Rscript$' "${launcher_probe_count}")" = 1 ]]
