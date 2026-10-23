@@ -10,3 +10,5 @@ updates:
       github-actions-dependencies:
         patterns:
           - '*'
+    cooldown:
+      default-days: 1
