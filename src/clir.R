@@ -212,6 +212,10 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     stop(paste("Invalid number of arguments for", command), call. = FALSE)
   }
   cpus <- parsed$options[["cpus"]]
+  supplied_cpus <- any(grepl("^--cpus($|=)", option_tokens))
+  if (supplied_cpus && is.null(cpus)) {
+    stop("--cpus must be a positive integer.", call. = FALSE)
+  }
   if (!is.null(cpus) && (is.na(cpus) || cpus < 1L)) {
     stop("--cpus must be a positive integer.", call. = FALSE)
   }
