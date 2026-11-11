@@ -207,6 +207,10 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
         length(parsed$args) > limits[[2L]]) {
     stop(paste("Invalid number of arguments for", command), call. = FALSE)
   }
+  cpus <- parsed$options[["cpus"]]
+  if (!is.null(cpus) && (is.na(cpus) || cpus < 1L)) {
+    stop("--cpus must be a positive integer.", call. = FALSE)
+  }
 
   args <- as.list(stats::setNames(rep(FALSE, length(commands)), commands))
   args[[command]] <- TRUE
@@ -215,7 +219,7 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
   args[["--init"]] <- isTRUE(parsed$options[["init"]])
   args[["--list"]] <- isTRUE(parsed$options[["list"]])
   args[["--no-upgrade"]] <- isTRUE(parsed$options[["no-upgrade"]])
-  args[["--cpus"]] <- parsed$options[["cpus"]]
+  args[["--cpus"]] <- cpus
   args[["--dest-dir"]] <- if (is.null(parsed$options[["dest-dir"]])) {
     "."
   } else {
