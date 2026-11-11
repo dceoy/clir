@@ -413,12 +413,20 @@ CLIR_TEST_PROFILE_MARKER="${test_root}/runtime-profile-marker" \
 HOME="${test_root}" \
 PATH="${installer_fake_bin}:${PATH}" \
   "${installer_root}/install_clir.sh" --root --debug
-[[ -f "${installer_link_marker}" ]]
-[[ -f "${installer_bootstrap_marker}" ]]
-[[ ! -e "${installer_marker}" ]]
-[[ ! -e "${test_root}/managed-marker" ]]
-[[ ! -e "${test_root}/probe-profile-marker" ]]
-[[ ! -e "${test_root}/runtime-profile-marker" ]]
+for marker in "${installer_link_marker}" "${installer_bootstrap_marker}"; do
+  if [[ ! -f "${marker}" ]]; then
+    printf 'Missing expected root-install marker: %s\n' "${marker}" >&2
+    exit 1
+  fi
+done
+for marker in "${installer_marker}" "${test_root}/managed-marker" \
+              "${test_root}/probe-profile-marker" \
+              "${test_root}/runtime-profile-marker"; do
+  if [[ -e "${marker}" ]]; then
+    printf 'Unexpected root-install marker: %s\n' "${marker}" >&2
+    exit 1
+  fi
+done
 
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   cli_env=("R_LIBS_USER=${R_LIBS_USER}")

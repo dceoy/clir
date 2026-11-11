@@ -95,9 +95,18 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     "config", "cran", "update", "install", "download",
     "uninstall", "validate", "session"
   )
-  control_tokens <- argv
-  if ("--" %in% argv) {
-    control_tokens <- head(argv, match("--", argv) - 1L)
+  # A control flag can also be the value of --dest-dir or --cpus.
+  # Exclude option values and literal operands after "--" from the scan.
+  control_tokens <- character()
+  skip_value <- FALSE
+  for (token in argv) {
+    if (identical(token, "--")) break
+    if (skip_value) {
+      skip_value <- FALSE
+      next
+    }
+    control_tokens <- c(control_tokens, token)
+    if (token %in% c("--dest-dir", "--cpus")) skip_value <- TRUE
   }
   if (any(control_tokens %in% c("-h", "--help"))) {
     return(list(action = "help"))
@@ -170,7 +179,6 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     if (!after_separator && identical(token, "--")) {
       after_separator <- TRUE
     } else if (is_option) {
-      option_tokens <- c(option_tokens, token)
       flag <- sub("=.*$", "", token)
       requires_value <- flag %in% c("--cpus", "--dest-dir")
       has_inline_value <- grepl("=", token, fixed = TRUE)
@@ -179,7 +187,10 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
           stop(paste("Missing value for", flag), call. = FALSE)
         }
         i <- i + 1L
-        option_tokens <- c(option_tokens, tokens[[i]])
+        # Keep a leading dash in the value from being parsed as a new flag.
+        option_tokens <- c(option_tokens, paste0(flag, "=", tokens[[i]]))
+      } else {
+        option_tokens <- c(option_tokens, token)
       }
     } else {
       operands <- c(operands, token)

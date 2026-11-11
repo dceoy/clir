@@ -37,6 +37,15 @@ stopifnot(
 result <- parse("session")
 stopifnot(isTRUE(result$session), length(result[["<pkg>"]]) == 0L)
 
+for (value in c("--help", "--version", "-h")) {
+  result <- parse("download", "--dest-dir", value, "dplyr")
+  stopifnot(
+    isTRUE(result$download),
+    identical(result[["--dest-dir"]], value),
+    identical(result[["<pkg>"]], "dplyr")
+  )
+}
+
 result <- parse("install", "--", "--special-package")
 stopifnot(identical(result[["<pkg>"]], "--special-package"))
 
