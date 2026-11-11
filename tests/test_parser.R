@@ -46,6 +46,13 @@ for (value in c("--help", "--version", "-h")) {
   )
 }
 
+result <- parse("download", "dplyr", "--dest-dir=--help")
+stopifnot(
+  isTRUE(result$download),
+  identical(result[["--dest-dir"]], "--help"),
+  identical(result[["<pkg>"]], "dplyr")
+)
+
 result <- parse("install", "--", "--special-package")
 stopifnot(identical(result[["<pkg>"]], "--special-package"))
 
