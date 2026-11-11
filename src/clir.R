@@ -341,9 +341,9 @@ if (!interactive() && sys.nframe() == 0L) {
   initialized <- initialize_clir()
   parsed <- parse_clir_args()
   if (parsed$action == "help") {
-    cat(doc, "\n")
+    cat(doc, "\n", sep = "")
   } else if (parsed$action == "version") {
-    cat(clir_version, "\n")
+    cat(clir_version, "\n", sep = "")
   } else if (parsed$args[["--quiet"]]) {
     suppressMessages(main(args = parsed$args, initialized = initialized))
   } else {

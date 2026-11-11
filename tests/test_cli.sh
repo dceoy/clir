@@ -397,7 +397,6 @@ rm -f "${installer_marker}" "${installer_bootstrap_marker}" \
   "${test_root}/probe-profile-marker" "${test_root}/runtime-profile-marker"
 printf 'R_LIBS_USER=%s\n' "${installer_env_library}" >"${test_root}/.Renviron"
 printf 'CLIR_TEST_PROFILE=enabled\n' >"${test_root}/.Rprofile"
-set -x
 env -u R_LIBS_USER -u R_LIBS \
 CLIR_SOURCE_DIR="${installer_root}" \
 CLIR_TEST_ENV_LIBRARY="${installer_env_library}" \
