@@ -112,24 +112,28 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
   command <- argv[[1L]]
   option_list <- list(
     optparse::make_option(
-      c("-v", "--verbose"), action = "store_true",
+      c("-v", "--verbose"),
+      action = "store_true",
       dest = "-v", default = FALSE
     ),
     optparse::make_option(
-      "--quiet", action = "store_true", dest = "--quiet", default = FALSE
+      "--quiet",
+      action = "store_true", dest = "--quiet", default = FALSE
     )
   )
   if (command == "config") {
     option_list <- c(option_list, list(
       optparse::make_option(
-        "--init", action = "store_true", default = FALSE
+        "--init",
+        action = "store_true", default = FALSE
       )
     ))
   }
   if (command == "cran") {
     option_list <- c(option_list, list(
       optparse::make_option(
-        "--list", action = "store_true", default = FALSE
+        "--list",
+        action = "store_true", default = FALSE
       )
     ))
   }
@@ -141,7 +145,8 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
   if (command == "install") {
     option_list <- c(option_list, list(
       optparse::make_option(
-        "--no-upgrade", action = "store_true", default = FALSE
+        "--no-upgrade",
+        action = "store_true", default = FALSE
       )
     ))
   }
@@ -196,8 +201,7 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     ),
     warning = function(w) stop(conditionMessage(w), call. = FALSE)
   )
-  limits <- switch(
-    command,
+  limits <- switch(command,
     config = c(0, 0),
     cran = c(0, Inf),
     update = c(0, 0),
@@ -236,7 +240,11 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
   args[["<url>"]] <- if (command == "cran") parsed$args else character()
   args[["<pkg>"]] <- if (command %in% c(
     "install", "download", "uninstall", "validate", "session"
-  )) parsed$args else character()
+  )) {
+    parsed$args
+  } else {
+    character()
+  }
   list(action = "run", args = args)
 }
 
