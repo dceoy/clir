@@ -161,14 +161,15 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
   i <- 1L
   while (i <= length(tokens)) {
     token <- tokens[[i]]
+    is_option <- !after_separator && startsWith(token, "-") && token != "-"
     if (!after_separator && identical(token, "--")) {
       after_separator <- TRUE
-    } else if (!after_separator && startsWith(token, "-") &&
-                 token != "-") {
+    } else if (is_option) {
       option_tokens <- c(option_tokens, token)
       flag <- sub("=.*$", "", token)
-      if (flag %in% c("--cpus", "--dest-dir") &&
-            !grepl("=", token, fixed = TRUE)) {
+      requires_value <- flag %in% c("--cpus", "--dest-dir")
+      has_inline_value <- grepl("=", token, fixed = TRUE)
+      if (requires_value && !has_inline_value) {
         if (i == length(tokens)) {
           stop(paste("Missing value for", flag), call. = FALSE)
         }
@@ -186,11 +187,14 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     option_list = option_list,
     add_help_option = FALSE
   )
-  parsed <- optparse::parse_args(
-    parser,
-    args = c(option_tokens, "--", operands),
-    positional_arguments = TRUE,
-    print_help_and_exit = FALSE
+  parsed <- withCallingHandlers(
+    optparse::parse_args(
+      parser,
+      args = c(option_tokens, "--", operands),
+      positional_arguments = TRUE,
+      print_help_and_exit = FALSE
+    ),
+    warning = function(w) stop(conditionMessage(w), call. = FALSE)
   )
   limits <- switch(
     command,
@@ -203,8 +207,8 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     validate = c(1, Inf),
     session = c(0, Inf)
   )
-  if (length(parsed$args) < limits[[1L]] ||
-        length(parsed$args) > limits[[2L]]) {
+  n_args <- length(parsed$args)
+  if (n_args < limits[[1L]] || n_args > limits[[2L]]) {
     stop(paste("Invalid number of arguments for", command), call. = FALSE)
   }
   cpus <- parsed$options[["cpus"]]
