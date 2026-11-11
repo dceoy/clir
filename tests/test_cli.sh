@@ -435,7 +435,7 @@ run_cli() {
     HOME="${cli_home}" "${cli_env[@]}" "${cli}" "${@}"
 }
 
-[[ "$(run_cli --version)" = 'v2.0.0' ]]
+[[ "$(run_cli --version)" = 'v2.1.0' ]]
 
 profile_home="${test_root}/profile-home"
 profile_file="${test_root}/drop-selected-library.R"
@@ -443,8 +443,8 @@ mkdir -p "${profile_home}"
 cat >"${profile_file}" <<'EOF'
 selected <- normalizePath(Sys.getenv("CLIR_TEST_SELECTED_LIBRARY"), mustWork = FALSE)
 .libPaths(setdiff(.libPaths(), selected))
-if (requireNamespace("docopt", quietly = TRUE)) {
-  stop("docopt is available outside the selected library")
+if (requireNamespace("optparse", quietly = TRUE)) {
+  stop("optparse is available outside the selected library")
 }
 EOF
 selected_library="${cli_env[0]#*=}"
@@ -454,7 +454,7 @@ profile_version=$(env -u R_ENVIRON_USER -u R_PROFILE \
   HOME="${profile_home}" \
   CLIR_TEST_SELECTED_LIBRARY="${selected_library}" \
   "${cli_env[@]}" "${cli}" --version)
-[[ "${profile_version}" = 'v2.0.0' ]]
+[[ "${profile_version}" = 'v2.1.0' ]]
 
 help_output=$(run_cli --help)
 grep -Fq 'pak' <<<"${help_output}"
@@ -481,5 +481,14 @@ assert_parser_rejects drat example
 assert_parser_rejects install --devt=cran example
 assert_parser_rejects install --bioc example
 assert_parser_rejects --invalid-option
+assert_parser_rejects install
+assert_parser_rejects download
+assert_parser_rejects update extra
+assert_parser_rejects config --no-upgrade
+assert_parser_rejects install --cpus=invalid pkg
+assert_parser_rejects install --cpus
+
+# Help remains accessible on subcommands and must not trigger installation.
+run_cli install --help | grep -Fq 'clir install'
 
 echo 'All CLI tests passed.'

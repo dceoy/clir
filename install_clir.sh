@@ -296,7 +296,7 @@ CLIR_CRAN_URL="${CRAN_URL}" CLIR_REINSTALL="${REINSTALL}" \
   R --no-environ --no-site-file --no-init-file --no-save --no-restore \
     --no-echo -q <<'EOF' || abort 'Package installation failed.'
 options(repos = c(CRAN = Sys.getenv("CLIR_CRAN_URL")));
-pkgs <- c('docopt', 'yaml', 'pak');
+pkgs <- c('optparse', 'yaml', 'pak');
 reinstall <- identical(Sys.getenv("CLIR_REINSTALL"), "1");
 for (p in pkgs) {
   if (reinstall || (!requireNamespace(p, quietly = TRUE))) {
@@ -318,13 +318,13 @@ echo '>>> Validate installed packages'
 if [[ ${SYSTEM_INSTALL} -ne 0 ]]; then
   R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null \
     R_PROFILE=/dev/null R_PROFILE_USER=/dev/null \
-    "${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
+    "${CLIR_ROOT}/bin/clir" install --no-upgrade optparse yaml pak
   R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null \
     R_PROFILE=/dev/null R_PROFILE_USER=/dev/null \
-    "${CLIR_ROOT}/bin/clir" validate docopt yaml pak
+    "${CLIR_ROOT}/bin/clir" validate optparse yaml pak
 else
-  "${CLIR_ROOT}/bin/clir" install --no-upgrade docopt yaml pak
-  "${CLIR_ROOT}/bin/clir" validate docopt yaml pak
+  "${CLIR_ROOT}/bin/clir" install --no-upgrade optparse yaml pak
+  "${CLIR_ROOT}/bin/clir" validate optparse yaml pak
 fi
 echo
 

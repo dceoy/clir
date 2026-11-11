@@ -89,6 +89,7 @@ jobs:
       - name: Run focused regression tests
         run: |
           Rscript tests/test_util.R
+          Rscript tests/test_parser.R
           bash tests/test_cli.sh
   cli-test:
     if: >

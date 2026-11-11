@@ -62,7 +62,7 @@ git clone https://github.com/dceoy/clir.git ~/.clir
 ~/.clir/install_clir.sh
 ```
 
-The installer bootstraps only `docopt`, `yaml`, and `pak`. Use `--root` to install into `/usr/local`:
+The installer bootstraps only `optparse`, `yaml`, and `pak`. Use `--root` to install into `/usr/local`:
 
 ```sh
 sudo ~/.clir/install_clir.sh --root
