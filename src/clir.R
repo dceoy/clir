@@ -164,11 +164,11 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     if (!after_separator && identical(token, "--")) {
       after_separator <- TRUE
     } else if (!after_separator && startsWith(token, "-") &&
-               token != "-") {
+                 token != "-") {
       option_tokens <- c(option_tokens, token)
       flag <- sub("=.*$", "", token)
       if (flag %in% c("--cpus", "--dest-dir") &&
-          !grepl("=", token, fixed = TRUE)) {
+            !grepl("=", token, fixed = TRUE)) {
         if (i == length(tokens)) {
           stop(paste("Missing value for", flag), call. = FALSE)
         }
@@ -204,7 +204,7 @@ parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
     session = c(0, Inf)
   )
   if (length(parsed$args) < limits[[1L]] ||
-      length(parsed$args) > limits[[2L]]) {
+        length(parsed$args) > limits[[2L]]) {
     stop(paste("Invalid number of arguments for", command), call. = FALSE)
   }
 
