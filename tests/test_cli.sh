@@ -413,12 +413,20 @@ CLIR_TEST_PROFILE_MARKER="${test_root}/runtime-profile-marker" \
 HOME="${test_root}" \
 PATH="${installer_fake_bin}:${PATH}" \
   "${installer_root}/install_clir.sh" --root --debug
-[[ -f "${installer_link_marker}" ]]
-[[ -f "${installer_bootstrap_marker}" ]]
-[[ ! -e "${installer_marker}" ]]
-[[ ! -e "${test_root}/managed-marker" ]]
-[[ ! -e "${test_root}/probe-profile-marker" ]]
-[[ ! -e "${test_root}/runtime-profile-marker" ]]
+for marker in "${installer_link_marker}" "${installer_bootstrap_marker}"; do
+  if [[ ! -f "${marker}" ]]; then
+    printf 'Missing expected root-install marker: %s\n' "${marker}" >&2
+    exit 1
+  fi
+done
+for marker in "${installer_marker}" "${test_root}/managed-marker" \
+              "${test_root}/probe-profile-marker" \
+              "${test_root}/runtime-profile-marker"; do
+  if [[ -e "${marker}" ]]; then
+    printf 'Unexpected root-install marker: %s\n' "${marker}" >&2
+    exit 1
+  fi
+done
 
 if [[ -n "${R_LIBS_USER:-}" ]]; then
   cli_env=("R_LIBS_USER=${R_LIBS_USER}")
@@ -435,7 +443,7 @@ run_cli() {
     HOME="${cli_home}" "${cli_env[@]}" "${cli}" "${@}"
 }
 
-[[ "$(run_cli --version)" = 'v2.0.0' ]]
+[[ "$(run_cli --version)" = 'v2.1.0' ]]
 
 profile_home="${test_root}/profile-home"
 profile_file="${test_root}/drop-selected-library.R"
@@ -443,8 +451,8 @@ mkdir -p "${profile_home}"
 cat >"${profile_file}" <<'EOF'
 selected <- normalizePath(Sys.getenv("CLIR_TEST_SELECTED_LIBRARY"), mustWork = FALSE)
 .libPaths(setdiff(.libPaths(), selected))
-if (requireNamespace("docopt", quietly = TRUE)) {
-  stop("docopt is available outside the selected library")
+if (requireNamespace("optparse", quietly = TRUE)) {
+  stop("optparse is available outside the selected library")
 }
 EOF
 selected_library="${cli_env[0]#*=}"
@@ -454,7 +462,7 @@ profile_version=$(env -u R_ENVIRON_USER -u R_PROFILE \
   HOME="${profile_home}" \
   CLIR_TEST_SELECTED_LIBRARY="${selected_library}" \
   "${cli_env[@]}" "${cli}" --version)
-[[ "${profile_version}" = 'v2.0.0' ]]
+[[ "${profile_version}" = 'v2.1.0' ]]
 
 help_output=$(run_cli --help)
 grep -Fq 'pak' <<<"${help_output}"
@@ -481,5 +489,14 @@ assert_parser_rejects drat example
 assert_parser_rejects install --devt=cran example
 assert_parser_rejects install --bioc example
 assert_parser_rejects --invalid-option
+assert_parser_rejects install
+assert_parser_rejects download
+assert_parser_rejects update extra
+assert_parser_rejects config --no-upgrade
+assert_parser_rejects install --cpus=invalid pkg
+assert_parser_rejects install --cpus
+
+# Help remains accessible on subcommands and must not trigger installation.
+run_cli install --help | grep -Fq 'clir install'
 
 echo 'All CLI tests passed.'

@@ -40,7 +40,7 @@ Arguments:
     <url>...            A CRAN repository URL
     <pkg>...            R package names or pak package references"
 
-clir_version <- "v2.0.0"
+clir_version <- "v2.1.0"
 
 fetch_clir_root <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -85,6 +85,178 @@ initialize_clir <- function(clir_root_dir = fetch_clir_root(), r_lib = NULL) {
     r_lib = r_lib,
     util = util$value
   )
+}
+
+
+# Keep the docopt-shaped argument contract used by main(), while optparse
+# handles option validation and conversion for each supported subcommand.
+parse_clir_args <- function(argv = commandArgs(trailingOnly = TRUE)) {
+  commands <- c(
+    "config", "cran", "update", "install", "download",
+    "uninstall", "validate", "session"
+  )
+  # A control flag can also be the value of --dest-dir or --cpus.
+  # Exclude option values and literal operands after "--" from the scan.
+  control_tokens <- character()
+  skip_value <- FALSE
+  for (token in argv) {
+    if (identical(token, "--")) break
+    if (skip_value) {
+      skip_value <- FALSE
+      next
+    }
+    control_tokens <- c(control_tokens, token)
+    if (token %in% c("--dest-dir", "--cpus")) skip_value <- TRUE
+  }
+  if (any(control_tokens %in% c("-h", "--help"))) {
+    return(list(action = "help"))
+  }
+  if ("--version" %in% control_tokens) {
+    return(list(action = "version"))
+  }
+  if (length(argv) == 0L || !(argv[[1L]] %in% commands)) {
+    stop("Invalid or missing subcommand. Run clir --help.", call. = FALSE)
+  }
+
+  command <- argv[[1L]]
+  option_list <- list(
+    optparse::make_option(
+      c("-v", "--verbose"),
+      action = "store_true",
+      dest = "-v", default = FALSE
+    ),
+    optparse::make_option(
+      "--quiet",
+      action = "store_true", dest = "--quiet", default = FALSE
+    )
+  )
+  if (command == "config") {
+    option_list <- c(option_list, list(
+      optparse::make_option(
+        "--init",
+        action = "store_true", default = FALSE
+      )
+    ))
+  }
+  if (command == "cran") {
+    option_list <- c(option_list, list(
+      optparse::make_option(
+        "--list",
+        action = "store_true", default = FALSE
+      )
+    ))
+  }
+  if (command %in% c("update", "install")) {
+    option_list <- c(option_list, list(
+      optparse::make_option("--cpus", type = "integer")
+    ))
+  }
+  if (command == "install") {
+    option_list <- c(option_list, list(
+      optparse::make_option(
+        "--no-upgrade",
+        action = "store_true", default = FALSE
+      )
+    ))
+  }
+  if (command == "download") {
+    option_list <- c(option_list, list(
+      optparse::make_option("--dest-dir", default = ".")
+    ))
+  }
+
+  # optparse expects options before operands. Preserve docopt's acceptance
+  # of options interspersed with package names by moving option tokens first.
+  # An explicit "--" keeps every subsequent token as a literal operand.
+  tokens <- argv[-1L]
+  option_tokens <- character()
+  operands <- character()
+  after_separator <- FALSE
+  i <- 1L
+  while (i <= length(tokens)) {
+    token <- tokens[[i]]
+    is_option <- !after_separator && startsWith(token, "-") && token != "-"
+    if (!after_separator && identical(token, "--")) {
+      after_separator <- TRUE
+    } else if (is_option) {
+      flag <- sub("=.*$", "", token)
+      requires_value <- flag %in% c("--cpus", "--dest-dir")
+      has_inline_value <- grepl("=", token, fixed = TRUE)
+      if (requires_value && !has_inline_value) {
+        if (i == length(tokens)) {
+          stop(paste("Missing value for", flag), call. = FALSE)
+        }
+        i <- i + 1L
+        # Keep a leading dash in the value from being parsed as a new flag.
+        option_tokens <- c(option_tokens, paste0(flag, "=", tokens[[i]]))
+      } else {
+        option_tokens <- c(option_tokens, token)
+      }
+    } else {
+      operands <- c(operands, token)
+    }
+    i <- i + 1L
+  }
+
+  parser <- optparse::OptionParser(
+    usage = paste("clir", command, "[options] [arguments]"),
+    option_list = option_list,
+    add_help_option = FALSE
+  )
+  parsed <- withCallingHandlers(
+    optparse::parse_args(
+      parser,
+      args = c(option_tokens, "--", operands),
+      positional_arguments = TRUE,
+      print_help_and_exit = FALSE
+    ),
+    warning = function(w) stop(conditionMessage(w), call. = FALSE)
+  )
+  limits <- switch(command,
+    config = c(0, 0),
+    cran = c(0, Inf),
+    update = c(0, 0),
+    install = c(1, Inf),
+    download = c(1, Inf),
+    uninstall = c(1, Inf),
+    validate = c(1, Inf),
+    session = c(0, Inf)
+  )
+  n_args <- length(parsed$args)
+  if (n_args < limits[[1L]] || n_args > limits[[2L]]) {
+    stop(paste("Invalid number of arguments for", command), call. = FALSE)
+  }
+  cpus <- parsed$options[["cpus"]]
+  supplied_cpus <- any(grepl("^--cpus($|=)", option_tokens))
+  if (supplied_cpus && is.null(cpus)) {
+    stop("--cpus must be a positive integer.", call. = FALSE)
+  }
+  if (!is.null(cpus) && (is.na(cpus) || cpus < 1L)) {
+    stop("--cpus must be a positive integer.", call. = FALSE)
+  }
+
+  args <- as.list(stats::setNames(rep(FALSE, length(commands)), commands))
+  args[[command]] <- TRUE
+  args[["-v"]] <- isTRUE(parsed$options[["-v"]])
+  args[["--quiet"]] <- isTRUE(parsed$options[["--quiet"]])
+  args[["--init"]] <- isTRUE(parsed$options[["init"]])
+  args[["--list"]] <- isTRUE(parsed$options[["list"]])
+  args[["--no-upgrade"]] <- isTRUE(parsed$options[["no-upgrade"]])
+  args[["--cpus"]] <- cpus
+  args[["--dest-dir"]] <- if (is.null(parsed$options[["dest-dir"]])) {
+    "."
+  } else {
+    parsed$options[["dest-dir"]]
+  }
+  args[["<url>"]] <- if (command == "cran") parsed$args else character()
+  args[["<pkg>"]] <- if (command %in% c(
+    "install", "download", "uninstall", "validate", "session"
+  )) {
+    parsed$args
+  } else {
+    character()
+  }
+  list(action = "run", args = args)
 }
 
 main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL,
@@ -165,12 +337,16 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL,
   }
 }
 
-if (!interactive()) {
+if (!interactive() && sys.nframe() == 0L) {
   initialized <- initialize_clir()
-  args <- docopt::docopt(doc, version = clir_version)
-  if (args[["--quiet"]]) {
-    suppressMessages(main(args = args, initialized = initialized))
+  parsed <- parse_clir_args()
+  if (parsed$action == "help") {
+    cat(doc, "\n", sep = "")
+  } else if (parsed$action == "version") {
+    cat(clir_version, "\n", sep = "")
+  } else if (parsed$args[["--quiet"]]) {
+    suppressMessages(main(args = parsed$args, initialized = initialized))
   } else {
-    main(args = args, initialized = initialized)
+    main(args = parsed$args, initialized = initialized)
   }
 }
