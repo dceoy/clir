@@ -275,7 +275,10 @@ main <- function(args, clir_root_dir = fetch_clir_root(), r_lib = NULL,
     parallel::detectCores(),
     as.integer(args[["--cpus"]])
   )
-  options(warn = 1, Ncpus = ncpus, verbose = args[["-v"]])
+  options(
+    warn = 1, Ncpus = ncpus, verbose = args[["-v"]],
+    pak.no_extra_messages = TRUE
+  )
   if (args[["-v"]]) {
     print(list(warn = 1, Ncpus = ncpus, verbose = args[["-v"]]))
   }
