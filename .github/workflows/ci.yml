@@ -44,7 +44,7 @@ jobs:
         r-version: [devel, release, oldrel-1]
     permissions:
       contents: read
-    uses: dceoy/gha-for-devops/.github/workflows/r-package-lint.yml@9e394d7c18b3a00fb853cd3c693cc4eeb5f0c825  # v2.3.0
+    uses: dceoy/gha-for-devops/.github/workflows/r-package-lint.yml@a49d8c5289d9ac33c9eef275f0238dd6a8b306d5  # v2.3.5
     with:
       package-path: .
       r-version: ${{ matrix.r-version }}
@@ -150,7 +150,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: dceoy/gha-for-devops/.github/workflows/r-package-format-and-pr.yml@9e394d7c18b3a00fb853cd3c693cc4eeb5f0c825  # v2.3.0
+    uses: dceoy/gha-for-devops/.github/workflows/r-package-format-and-pr.yml@a49d8c5289d9ac33c9eef275f0238dd6a8b306d5  # v2.3.5
     with:
       package-path: .
       r-version: ${{ inputs.r-version || 'release' }}
@@ -169,6 +169,6 @@ jobs:
       actions: read
       checks: read
       statuses: read
-    uses: dceoy/gha-for-devops/.github/workflows/dependabot-auto-merge.yml@9e394d7c18b3a00fb853cd3c693cc4eeb5f0c825  # v2.3.0
+    uses: dceoy/gha-for-devops/.github/workflows/dependabot-auto-merge.yml@a49d8c5289d9ac33c9eef275f0238dd6a8b306d5  # v2.3.5
     with:
       unconditional: true
